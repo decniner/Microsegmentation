@@ -1,0 +1,3289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Microsegmentation Strategy Lab</title>
+<style>
+:root{
+  --bg:#080a0e;
+  --panel:#10141b;
+  --panel-2:#151a23;
+  --panel-3:#1b212c;
+  --line:#242c39;
+  --line-2:#313b4b;
+  --txt:#e7ecf3;
+  --muted:#8d9aad;
+  --dim:#65707f;
+  --green:#31c07a;
+  --amber:#e2a33c;
+  --red:#e2554f;
+  --blue:#4d8fe8;
+  --purple:#a06ef2;
+  --focus:#8ab6ff;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1200px 620px at 12% -12%, #131a24 0%, transparent 60%),
+    radial-gradient(900px 520px at 100% 0%, #101623 0%, transparent 55%),
+    var(--bg);
+  color:var(--txt);
+  font:15px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+  min-height:100vh;
+}
+h1,h2,h3,h4{margin:0 0 .5em;line-height:1.2;font-weight:650;letter-spacing:.2px}
+h1{font-size:15px;letter-spacing:1.4px}
+h2{font-size:clamp(20px,3.4vw,28px);margin-top:.2em}
+h3{font-size:17px;margin-top:1.4em}
+h4{font-size:14px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-top:1.2em}
+p{margin:.55em 0}
+a{color:var(--blue)}
+code,kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em}
+.wrap{max-width:1220px;margin:0 auto;padding:0 14px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--blue);color:#fff;padding:10px 14px;z-index:999}
+.skip:focus{left:8px;top:8px}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+
+/* ---------- header ---------- */
+header.top{border-bottom:1px solid var(--line);background:linear-gradient(180deg,#0d1117,rgba(8,10,14,.4))}
+.topin{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;padding-top:14px;padding-bottom:12px}
+.brand{display:flex;gap:12px;align-items:flex-start;min-width:260px;flex:1 1 340px}
+.logo{width:38px;height:38px;flex:0 0 38px;border-radius:9px;border:1px solid var(--line-2);
+  background:linear-gradient(150deg,#1b2431,#0e131b);display:grid;place-items:center}
+.brand h1{margin:0;color:#fff}
+.brand .sub{margin:2px 0 0;font-size:12.5px;color:var(--muted);max-width:640px}
+.topctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.modesw{display:flex;border:1px solid var(--line-2);border-radius:999px;overflow:hidden;background:var(--panel)}
+.modesw button{background:transparent;border:0;color:var(--muted);padding:8px 13px;font:inherit;font-size:12.5px;
+  letter-spacing:.6px;cursor:pointer;min-height:38px}
+.modesw button.on{background:linear-gradient(180deg,#233246,#1a2534);color:#fff}
+
+/* ---------- nav ---------- */
+.navwrap{position:sticky;top:0;z-index:40;background:rgba(8,10,14,.92);
+  backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+.prog{display:flex;align-items:center;gap:10px;padding:9px 0 4px;flex-wrap:wrap}
+.proglabel{font-size:10.5px;letter-spacing:1.6px;color:var(--dim)}
+.bar{flex:1 1 180px;height:6px;border-radius:99px;background:#1b2129;overflow:hidden;min-width:120px}
+.bar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--blue),var(--purple));transition:width .35s ease}
+#progTxt{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:6px 0 10px;scrollbar-width:thin}
+.chips button{flex:0 0 auto;background:var(--panel);border:1px solid var(--line);color:var(--muted);
+  border-radius:999px;padding:7px 12px;font:inherit;font-size:11.5px;letter-spacing:1px;cursor:pointer;min-height:36px}
+.chips button .num{color:var(--dim);margin-right:5px}
+.chips button:hover{border-color:var(--line-2);color:var(--txt)}
+.chips button.active{background:linear-gradient(180deg,#22303f,#182231);border-color:#3c5064;color:#fff}
+.chips button.done .num{color:var(--green)}
+
+/* ---------- layout ---------- */
+main{padding:20px 0 70px}
+.phase{display:none;animation:fade .25s ease}
+.phase.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.eyebrow{font-size:11px;letter-spacing:2.4px;color:var(--blue);margin:0 0 2px}
+.lede{font-size:16px;color:#c8d2e0;max-width:900px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin:14px 0}
+.card.tight{padding:12px}
+.card h3:first-child,.card h4:first-child{margin-top:0}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.spread{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.muted{color:var(--muted)}
+.dim{color:var(--dim)}
+.small{font-size:12.5px}
+.tiny{font-size:11.5px}
+.tag{display:inline-block;font-size:10.5px;letter-spacing:1.1px;padding:3px 8px;border-radius:99px;
+  border:1px solid var(--line-2);color:var(--muted);background:#141a23}
+.tag.sim{border-color:#3a4a63;color:#8fb4e8;background:#141d29}
+.tag.doc{border-color:#2f4a3c;color:#7fd0a4;background:#121d18}
+.tag.ex{border-color:#4a3f2a;color:#dfb877;background:#1d1913}
+hr.sep{border:0;border-top:1px solid var(--line);margin:18px 0}
+
+/* ---------- buttons ---------- */
+.btn{background:var(--panel-3);border:1px solid var(--line-2);color:var(--txt);border-radius:8px;
+  padding:9px 14px;font:inherit;font-size:13px;cursor:pointer;min-height:40px;transition:.15s}
+.btn:hover{border-color:#46586e;background:#222a37}
+.btn.primary{background:linear-gradient(180deg,#2f6fd0,#255bb0);border-color:#3a7ade;color:#fff}
+.btn.primary:hover{background:linear-gradient(180deg,#3879dd,#2a63bd)}
+.btn.danger{background:linear-gradient(180deg,#b23f3a,#8f312d);border-color:#d05a54;color:#fff}
+.btn.ghost{background:transparent}
+.btn.small{font-size:12px;padding:6px 10px;min-height:34px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.wide{width:100%}
+
+/* ---------- misc ---------- */
+.metric{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:12px}
+.metric .k{font-size:10.5px;letter-spacing:1.3px;color:var(--dim);text-transform:uppercase}
+.metric .v{font-size:clamp(19px,3vw,25px);font-weight:650;font-variant-numeric:tabular-nums;margin-top:3px}
+.metric .n{font-size:11.5px;color:var(--muted);margin-top:3px}
+.v.green{color:var(--green)}.v.amber{color:var(--amber)}.v.red{color:var(--red)}
+.v.blue{color:var(--blue)}.v.purple{color:var(--purple)}
+.pill{font-size:10.5px;letter-spacing:.9px;padding:2px 7px;border-radius:99px;border:1px solid var(--line-2);color:var(--muted)}
+.pill.g{color:var(--green);border-color:#2b5c45;background:#10201a}
+.pill.a{color:var(--amber);border-color:#5c4a26;background:#1e1811}
+.pill.r{color:var(--red);border-color:#5f2f2c;background:#1f1312}
+.pill.b{color:var(--blue);border-color:#2d4a6d;background:#111a25}
+.pill.p{color:var(--purple);border-color:#48356b;background:#181328}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line)}
+th{font-size:10.5px;letter-spacing:1.2px;color:var(--dim);text-transform:uppercase;font-weight:600}
+tr:last-child td{border-bottom:0}
+.tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+select,input[type=text],input[type=number],textarea{
+  background:#0e131a;border:1px solid var(--line-2);color:var(--txt);border-radius:7px;padding:8px 10px;
+  font:inherit;font-size:13px;width:100%;min-height:40px}
+textarea{min-height:70px;resize:vertical}
+label.f{display:block;font-size:11px;letter-spacing:1.1px;color:var(--dim);text-transform:uppercase;margin-bottom:5px}
+input[type=range]{width:100%;accent-color:var(--blue);min-height:32px}
+
+.note{border-left:3px solid var(--blue);background:#0f1620;padding:10px 13px;border-radius:0 8px 8px 0;margin:12px 0}
+.note.warn{border-color:var(--amber);background:#181410}
+.note.bad{border-color:var(--red);background:#1a1211}
+.note.good{border-color:var(--green);background:#101a15}
+.note p:first-child{margin-top:0}.note p:last-child{margin-bottom:0}
+
+pre{background:#0b0f15;border:1px solid var(--line);border-radius:9px;padding:13px;overflow:auto;font-size:12.5px;color:#c4d2e4}
+
+/* ---------- map ---------- */
+.mapstage{position:relative;background:linear-gradient(180deg,#0c1017,#0a0d12);border:1px solid var(--line);
+  border-radius:12px;padding:14px;overflow:hidden}
+.mapgrid{position:relative;z-index:2;display:grid;gap:10px;grid-template-columns:repeat(4,minmax(0,1fr))}
+.maplayer{display:flex;flex-direction:column;gap:8px;min-width:0}
+.maplayer h5{margin:0 0 2px;font-size:10px;letter-spacing:1.4px;color:var(--dim);text-transform:uppercase}
+.node{background:#141a23;border:1px solid var(--line-2);border-radius:8px;padding:8px 9px;font-size:12px;
+  cursor:pointer;text-align:left;color:var(--txt);font:inherit;font-size:12px;width:100%;transition:.15s;position:relative;z-index:3}
+.node:hover{border-color:#4a5f78;background:#182130}
+.node .nrole{display:block;font-size:10px;color:var(--dim);letter-spacing:.6px;margin-top:2px}
+.node.crit{border-left:3px solid var(--red)}
+.node.high{border-left:3px solid var(--amber)}
+.node.med{border-left:3px solid var(--blue)}
+.node.low{border-left:3px solid var(--green)}
+.node.unknown{border-left:3px solid var(--purple);border-style:dashed}
+.node.sel{border-color:var(--focus);box-shadow:0 0 0 2px rgba(138,182,255,.28)}
+.node.hidden{display:none}
+#mapSvg{position:absolute;inset:0;z-index:1;pointer-events:none}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:16px;height:0;border-top:2px solid;margin-right:6px;vertical-align:middle}
+@media(max-width:820px){.mapgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* ---------- boards ---------- */
+.board{display:grid;gap:10px}
+.pool{display:flex;flex-wrap:wrap;gap:7px;min-height:52px;padding:10px;border:1px dashed var(--line-2);border-radius:9px;background:#0d1219}
+.chip{background:#182130;border:1px solid var(--line-2);border-radius:99px;padding:6px 11px;font-size:12px;
+  cursor:grab;color:var(--txt);font:inherit;font-size:12px;min-height:34px}
+.chip:hover{border-color:#4a5f78}
+.chip.sel{outline:2px solid var(--focus);outline-offset:1px}
+.cols{display:grid;gap:9px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.colbox{border:1px solid var(--line);border-radius:9px;background:var(--panel-2);padding:9px;min-height:96px}
+.colbox.over{border-color:var(--focus);background:#16202d}
+.colbox h5{margin:0 0 7px;font-size:10.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;gap:6px}
+.colbox .items{display:flex;flex-wrap:wrap;gap:6px}
+.colbox .items .chip{cursor:pointer;background:#1d2735}
+
+/* ---------- flow / bars ---------- */
+.flowbar{display:flex;height:26px;border-radius:7px;overflow:hidden;border:1px solid var(--line-2);background:#0d1219}
+.flowbar span{display:grid;place-items:center;font-size:11px;color:#fff;white-space:nowrap;overflow:hidden;transition:width .4s}
+.fb-g{background:linear-gradient(180deg,#2f9e68,#247a51)}
+.fb-a{background:linear-gradient(180deg,#c08c31,#96691f)}
+.fb-r{background:linear-gradient(180deg,#b8483f,#8c342d)}
+
+/* ---------- svg why-diagram ---------- */
+.whystage{background:#0b0f15;border:1px solid var(--line);border-radius:12px;padding:10px}
+.wnode{fill:#151c26;stroke:#33404f;stroke-width:1.4}
+.wnode.compromised{fill:#2a1513;stroke:var(--red)}
+.wnode.protected{fill:#101c17;stroke:var(--green)}
+.wtext{fill:#c9d5e4;font-size:11px;font-family:inherit}
+.wtext.b{font-weight:600}
+.wedge{stroke:#39485a;stroke-width:1.6;fill:none;transition:.4s}
+.wedge.live{stroke:var(--red);stroke-width:2.4;stroke-dasharray:6 5;animation:dash 1s linear infinite}
+.wedge.blocked{stroke:#4a2b28;stroke-dasharray:3 6}
+.wedge.ok{stroke:var(--green);stroke-width:2.2}
+@keyframes dash{to{stroke-dashoffset:-22}}
+
+/* ---------- timeline / steps ---------- */
+.steps{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.step{font-size:11.5px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);color:var(--muted)}
+.step.on{border-color:#3d6ea8;background:#132133;color:#cfe2f7}
+.step.done{border-color:#2b5c45;background:#10201a;color:#9fe0bd}
+.arrow{color:var(--dim);font-size:12px}
+
+details{border:1px solid var(--line);border-radius:9px;background:var(--panel-2);margin:8px 0;overflow:hidden}
+details[open]{border-color:var(--line-2)}
+summary{cursor:pointer;padding:11px 13px;font-size:13.5px;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:10px;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--muted);font-size:16px}
+details[open] summary::after{content:"–"}
+.details-body{padding:0 13px 13px;border-top:1px solid var(--line)}
+
+.kv{display:grid;grid-template-columns:130px 1fr;gap:6px 12px;font-size:12.8px}
+.kv dt{color:var(--dim);font-size:11px;letter-spacing:.9px;text-transform:uppercase;padding-top:2px}
+.kv dd{margin:0}
+
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(20px);background:#182130;
+  border:1px solid var(--line-2);color:var(--txt);padding:11px 16px;border-radius:9px;font-size:13px;z-index:200;
+  opacity:0;pointer-events:none;transition:.25s;max-width:92vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.raci{overflow-x:auto}
+.raci table{min-width:720px}
+.raci td.cell{text-align:center;cursor:pointer;font-weight:600}
+.raci td.cell:hover{background:#182130}
+.rA{color:#e06a63}.rR{color:#e2b03c}.rC{color:#6fa8e8}.rI{color:#8d9aad}
+
+.footer{border-top:1px solid var(--line);padding:22px 0 40px;color:var(--dim);font-size:12px}
+.only-pro,.only-simple{display:none}
+body.mode-pro .only-pro{display:block}
+body.mode-simple .only-simple{display:block}
+body.mode-pro .only-simple{display:none}
+body.mode-simple .only-pro{display:none}
+.inline{display:inline}
+
+/* ---------- welcome overlay ---------- */
+.welcome{position:fixed;inset:0;z-index:500;display:grid;place-items:center;
+  padding:18px;overflow:auto;
+  background:rgba(5,7,10,.88);backdrop-filter:blur(8px)}
+.welcome[hidden]{display:none}
+.welcome-card{width:min(560px,100%);
+  background:linear-gradient(180deg,#121821,#0d1219);
+  border:1px solid var(--line-2);border-radius:16px;padding:26px 24px;
+  box-shadow:0 24px 70px rgba(0,0,0,.6);animation:welcomeIn .35s ease}
+@keyframes welcomeIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+.welcome h2{font-size:clamp(19px,3.2vw,26px);margin:0 0 4px}
+.welcome .wsub{color:var(--muted);font-size:13.5px;margin:0 0 18px}
+.contactbox{display:flex;gap:14px;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;background:#0e1620;border:1px solid #2d4a6d;border-radius:12px;
+  padding:16px;margin:0 0 16px}
+.contactbox .cl{font-size:10.5px;letter-spacing:1.6px;color:var(--dim);text-transform:uppercase}
+.contactbox a.mail{font-size:clamp(15px,2.6vw,19px);font-weight:650;color:#9fc6ff;
+  text-decoration:none;word-break:break-all;display:inline-block;margin-top:4px}
+.contactbox a.mail:hover{text-decoration:underline}
+.welcome ul{margin:0 0 18px;padding-left:18px;font-size:12.8px;color:var(--muted)}
+.welcome ul li{margin:3px 0}
+.welcome .wfoot{font-size:11.5px;color:var(--dim);margin:14px 0 0;text-align:center}
+.footer .contactline{color:var(--muted)}
+.footer .contactline a{color:#9fc6ff;text-decoration:none}
+.footer .contactline a:hover{text-decoration:underline}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+}
+@media(max-width:600px){
+  .topin{padding-top:10px}
+  .brand .sub{font-size:11.5px}
+  .kv{grid-template-columns:1fr}
+  .card{padding:13px}
+}
+</style>
+</head>
+<body class="mode-simple">
+<a class="skip" href="#main">Skip to main content</a>
+
+<!-- ============================ WELCOME OVERLAY ============================ -->
+<div class="welcome" id="welcome" role="dialog" aria-modal="true"
+     aria-labelledby="welcomeTitle" hidden>
+  <div class="welcome-card">
+    <p class="eyebrow">WELCOME</p>
+    <h2 id="welcomeTitle">MICROSEGMENTATION STRATEGY LAB</h2>
+    <p class="wsub">How a large financial institution can design, deploy, operate, and continuously improve microsegmentation.</p>
+
+    <div class="contactbox">
+      <div>
+        <div class="cl">Contact</div>
+        <a class="mail" href="mailto:densanchez@gmail.com">densanchez@gmail.com</a>
+      </div>
+      <a class="btn small" href="mailto:densanchez@gmail.com">Send email</a>
+    </div>
+
+    <ul>
+      <li>Interactive lab — discover, map, classify, design, pilot, enforce, operate, scale.</li>
+      <li>Runs entirely in your browser. No accounts, no tracking, no analytics.</li>
+      <li>Progress is saved only in your device's local storage.</li>
+    </ul>
+
+    <button class="btn primary wide" id="welcomeEnter" type="button">ENTER THE LAB →</button>
+    <p class="wfoot">Educational simulation · fictional enterprise environment</p>
+  </div>
+</div>
+
+<header class="top">
+  <div class="wrap topin">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#4d8fe8" stroke-width="1.5">
+          <rect x="2.5" y="2.5" width="7" height="7" rx="1.5"/>
+          <rect x="14.5" y="2.5" width="7" height="7" rx="1.5"/>
+          <rect x="2.5" y="14.5" width="7" height="7" rx="1.5"/>
+          <rect x="14.5" y="14.5" width="7" height="7" rx="1.5"/>
+          <path d="M9.5 6h5M6 9.5v5M18 9.5v5M9.5 18h5" stroke="#a06ef2"/>
+        </svg>
+      </div>
+      <div>
+        <h1>MICROSEGMENTATION STRATEGY LAB</h1>
+        <p class="sub">How a large financial institution can design, deploy, operate, and continuously improve microsegmentation.</p>
+      </div>
+    </div>
+    <div class="topctl">
+      <div class="modesw" role="group" aria-label="Detail level">
+        <button id="modeSimple" class="on" aria-pressed="true">🌱 SIMPLE</button>
+        <button id="modePro" aria-pressed="false">⚙ PROFESSIONAL</button>
+      </div>
+      <button class="btn ghost small" id="resetBtn" type="button">RESET LAB</button>
+    </div>
+  </div>
+  <nav class="navwrap" aria-label="Program phases">
+    <div class="wrap">
+      <div class="prog">
+        <span class="proglabel">MICROSEGMENTATION PROGRAM</span>
+        <div class="bar" id="progBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Program progress"><i></i></div>
+        <span id="progTxt">0% · 0 / 10 phases</span>
+      </div>
+      <div class="chips" id="chips" role="tablist" aria-label="Phase navigation"></div>
+    </div>
+  </nav>
+</header>
+
+<main id="main" class="wrap" tabindex="-1">
+
+<!-- ============================== 01 WHY ============================== -->
+<section class="phase active" id="s-why" data-phase="why" aria-labelledby="h-why">
+  <p class="eyebrow">01 · WHY</p>
+  <h2 id="h-why">Why microsegmentation?</h2>
+  <p class="lede">Traditional network security often assumes that once something is inside the network, it can communicate with many other things. Microsegmentation challenges that assumption.</p>
+
+  <div class="card">
+    <h3>In plain language</h3>
+    <p>Most corporate networks are built for connectivity. A user PC can reach a server, the server can reach a database, and the database can reach backup, monitoring, DNS and authentication services. That is convenient — and it is also why one compromised workload can often reach many others.</p>
+    <p>Microsegmentation narrows communication down to <strong>what is actually required</strong>. Not "inside versus outside". Not "which VLAN". It asks a much more specific question:</p>
+    <p style="font-size:16px;color:#cfe2f7"><em>Which workload is allowed to talk to which other workload, over which service, and why?</em></p>
+  </div>
+
+  <div class="card">
+    <div class="spread">
+      <h3 style="margin:0">Interactive: lateral movement vs. microsegmentation</h3>
+      <div class="row">
+        <button class="btn" id="whyCompromise" type="button">Simulate a compromise</button>
+        <button class="btn primary" id="whySegment" type="button">Activate microsegmentation</button>
+        <button class="btn ghost" id="whyReset" type="button">Reset diagram</button>
+      </div>
+    </div>
+
+    <div class="whystage" style="margin-top:12px">
+      <svg viewBox="0 0 720 300" width="100%" role="img" aria-labelledby="whySvgTitle whySvgDesc">
+        <title id="whySvgTitle">Lateral movement versus microsegmentation</title>
+        <desc id="whySvgDesc">A diagram of a user, an application server, a database and several supporting servers, showing how a compromise can spread when all communication is permitted, and how it is contained when microsegmentation policies are enforced.</desc>
+
+        <!-- edges -->
+        <path id="e-user-app" class="wedge" d="M96 90 C170 90 190 90 250 90"/>
+        <path id="e-app-db"   class="wedge" d="M370 90 C440 90 470 90 540 90"/>
+        <path id="e-app-dns"  class="wedge" d="M310 120 C310 160 150 160 140 205"/>
+        <path id="e-app-auth" class="wedge" d="M330 120 C330 165 300 175 300 205"/>
+        <path id="e-app-mon"  class="wedge" d="M350 120 C350 165 440 175 450 205"/>
+        <path id="e-app-bkp"  class="wedge" d="M365 120 C365 165 590 175 600 205"/>
+        <path id="e-db-bkp"   class="wedge" d="M600 120 C600 150 610 175 610 205"/>
+
+        <!-- nodes -->
+        <g>
+          <rect class="wnode" id="n-user" x="26" y="68" width="70" height="44" rx="7"/>
+          <text class="wtext b" x="61" y="95" text-anchor="middle">USER</text>
+
+          <rect class="wnode" id="n-app" x="250" y="68" width="120" height="44" rx="7"/>
+          <text class="wtext b" id="t-app" x="310" y="95" text-anchor="middle">APP SERVER</text>
+
+          <rect class="wnode" id="n-db" x="540" y="68" width="120" height="44" rx="7"/>
+          <text class="wtext b" id="t-db" x="600" y="95" text-anchor="middle">DATABASE</text>
+
+          <rect class="wnode" id="n-dns" x="90" y="205" width="100" height="38" rx="7"/>
+          <text class="wtext" id="t-dns" x="140" y="229" text-anchor="middle">DNS</text>
+
+          <rect class="wnode" id="n-auth" x="250" y="205" width="100" height="38" rx="7"/>
+          <text class="wtext" id="t-auth" x="300" y="229" text-anchor="middle">AUTH</text>
+
+          <rect class="wnode" id="n-mon" x="400" y="205" width="100" height="38" rx="7"/>
+          <text class="wtext" id="t-mon" x="450" y="229" text-anchor="middle">MONITORING</text>
+
+          <rect class="wnode" id="n-bkp" x="550" y="205" width="100" height="38" rx="7"/>
+          <text class="wtext" id="t-bkp" x="600" y="229" text-anchor="middle">BACKUP</text>
+        </g>
+        <text class="wtext" id="whyStatus" x="20" y="278" fill="#8d9aad">Status: all internal communication broadly permitted.</text>
+      </svg>
+    </div>
+
+    <div class="grid g3" style="margin-top:12px">
+      <div class="metric"><div class="k">Reachable from compromised workload</div><div class="v" id="whyReach">7</div><div class="n">Fictional simulation</div></div>
+      <div class="metric"><div class="k">Blast radius</div><div class="v" id="whyBlast">Broad</div><div class="n">Fictional simulation</div></div>
+      <div class="metric"><div class="k">Enforcement</div><div class="v" id="whyMode">Not configured</div><div class="n">Fictional simulation</div></div>
+    </div>
+    <p class="tiny dim">SIMULATION — illustrative diagram only. No real network, host, address or configuration is depicted.</p>
+  </div>
+
+  <div class="card only-simple">
+    <h3>The office building analogy</h3>
+    <div class="grid g2">
+      <div>
+        <h4>Traditional network</h4>
+        <p>Once you enter the building, you can walk into many rooms. Your access badge got you through the front door — and after that, most doors simply open.</p>
+      </div>
+      <div>
+        <h4>Microsegmentation</h4>
+        <p>Every room has its own lock, and your badge only opens the doors you actually need for your job. Nothing more.</p>
+      </div>
+    </div>
+    <hr class="sep">
+    <div class="grid g4">
+      <div class="metric"><div class="k">Room</div><div class="v" style="font-size:15px">Workload</div><div class="n">A server, container, database or service</div></div>
+      <div class="metric"><div class="k">Door</div><div class="v" style="font-size:15px">Network connection</div><div class="n">A flow between two workloads</div></div>
+      <div class="metric"><div class="k">Badge</div><div class="v" style="font-size:15px">Policy</div><div class="n">What is allowed, and why</div></div>
+      <div class="metric"><div class="k">Security guard</div><div class="v" style="font-size:15px">Monitoring</div><div class="n">Watching what actually happens</div></div>
+    </div>
+  </div>
+
+  <div class="card only-pro">
+    <h3>Professional vocabulary</h3>
+    <p class="muted small">Plain language first, then the term you will hear in architecture reviews.</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Plain language</th><th>Term</th><th>What it means in practice</th></tr></thead>
+        <tbody>
+          <tr><td>Servers talking to each other inside the data centre</td><td>East–west traffic</td><td>Internal workload-to-workload communication, as opposed to north–south traffic entering or leaving the estate.</td></tr>
+          <tr><td>Knowing exactly which workload is which</td><td>Workload identity</td><td>A stable, verifiable identity for a workload — not just an IP address that can be recycled.</td></tr>
+          <tr><td>The thing that actually says yes or no</td><td>Policy enforcement point</td><td>Host agent, hypervisor, container CNI, cloud security group or a network device applying the decision.</td></tr>
+          <tr><td>Only allow what is needed</td><td>Least privilege</td><td>Every allowed flow should have an owner and a reason.</td></tr>
+          <tr><td>Do not trust something just because it is inside</td><td>Zero Trust</td><td>Microsegmentation is one supporting control, not the whole model.</td></tr>
+          <tr><td>Who talks to whom, and why</td><td>Application dependency mapping</td><td>The evidence base for policy. Without it, policy is guesswork.</td></tr>
+          <tr><td>The rules themselves</td><td>Segmentation policy</td><td>Source, destination, service, action, justification, owner, lifecycle.</td></tr>
+          <tr><td>Records of what actually happened</td><td>Flow logs / telemetry</td><td>Observed connections used to validate and improve policy.</td></tr>
+          <tr><td>Keeping policy honest over time</td><td>Policy lifecycle &amp; drift</td><td>Create, review, approve, deploy, monitor, audit, update, retire.</td></tr>
+          <tr><td>Limiting how far an attacker can go</td><td>Blast-radius reduction</td><td>Reduces potential lateral movement. It does not guarantee an attack is stopped.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="note good">
+    <p><strong>Core message:</strong> Microsegmentation is not simply creating more network segments. It is controlling which workloads are allowed to communicate with which other workloads, and why.</p>
+  </div>
+
+  <div class="phasefoot row spread" style="margin-top:18px">
+    <button class="btn ghost" data-complete="why" type="button">Mark phase complete</button>
+    <button class="btn primary" data-goto="discover" type="button">Next: Discover →</button>
+  </div>
+</section>
+
+<!-- ============================== 02 DISCOVER ============================== -->
+<section class="phase" id="s-discover" data-phase="discover" aria-labelledby="h-discover">
+  <p class="eyebrow">02 · DISCOVER</p>
+  <h2 id="h-discover">You cannot segment what you cannot see</h2>
+  <p class="lede">Before a single policy is written, the organisation needs an accurate picture of what exists, who owns it, and what it is doing on the network.</p>
+
+  <div class="note warn">
+    <p><strong>You cannot safely enforce what you do not understand.</strong> This principle returns in every phase of this lab.</p>
+  </div>
+
+  <div class="card">
+    <div class="spread">
+      <h3 style="margin:0">Discovery dashboard</h3>
+      <span class="tag sim">SIMULATION DATA</span>
+    </div>
+    <div class="grid g3" style="margin-top:12px">
+      <div class="metric"><div class="k">Workloads discovered</div><div class="v blue" data-count="1284">0</div><div class="n">Fictional estate</div></div>
+      <div class="metric"><div class="k">Unknown</div><div class="v amber" data-count="147">0</div><div class="n">No confirmed owner</div></div>
+      <div class="metric"><div class="k">Known</div><div class="v green" data-count="1137">0</div><div class="n">Owner identified</div></div>
+      <div class="metric"><div class="k">Applications</div><div class="v" data-count="86">0</div><div class="n">Business services mapped</div></div>
+      <div class="metric"><div class="k">Databases</div><div class="v" data-count="143">0</div><div class="n">Includes managed cloud DBs</div></div>
+      <div class="metric"><div class="k">Dependencies</div><div class="v purple" data-count="8921">0</div><div class="n">Observed relationships</div></div>
+    </div>
+    <p class="tiny dim" style="margin-top:10px">All figures are fictional simulation values generated by this lab for teaching purposes.</p>
+  </div>
+
+  <div class="card">
+    <div class="spread">
+      <h3 style="margin:0">Discovery simulation</h3>
+      <button class="btn primary" id="runDiscovery" type="button">RUN DISCOVERY</button>
+    </div>
+    <div class="steps" id="discSteps" style="margin-top:12px" aria-live="polite">
+      <span class="step" data-s="0">Scanning inventory</span><span class="arrow">↓</span>
+      <span class="step" data-s="1">Collecting telemetry</span><span class="arrow">↓</span>
+      <span class="step" data-s="2">Identifying workloads</span><span class="arrow">↓</span>
+      <span class="step" data-s="3">Observing connections</span><span class="arrow">↓</span>
+      <span class="step" data-s="4">Building dependency map</span><span class="arrow">↓</span>
+      <span class="step" data-s="5">Finding unknown assets</span>
+    </div>
+    <div id="discLog" style="margin-top:12px" aria-live="polite"></div>
+  </div>
+
+  <div class="card">
+    <h3>Example workload inventory</h3>
+    <p class="muted small">A small fictional slice of the estate, used throughout this lab. Click any row to see its role.</p>
+    <div class="row" style="margin:10px 0">
+      <button class="btn small" data-invfilter="all" type="button">All</button>
+      <button class="btn small" data-invfilter="Application" type="button">Applications</button>
+      <button class="btn small" data-invfilter="Database" type="button">Databases</button>
+      <button class="btn small" data-invfilter="Infrastructure" type="button">Infrastructure</button>
+      <button class="btn small" data-invfilter="User endpoint" type="button">Endpoints</button>
+      <button class="btn small" data-invfilter="Cloud" type="button">Cloud</button>
+      <button class="btn small" data-invfilter="unknown" type="button">Unknown</button>
+    </div>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Workload</th><th>Role</th><th>Owner</th><th>Status</th></tr></thead>
+        <tbody id="invBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="phasefoot row spread" style="margin-top:18px">
+    <button class="btn ghost" data-goto="why" type="button">← Back</button>
+    <div class="row">
+      <button class="btn ghost" data-complete="discover" type="button">Mark phase complete</button>
+      <button class="btn primary" data-goto="map" type="button">Next: Map dependencies →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 03 MAP ============================== -->
+<section class="phase" id="s-map" data-phase="map" aria-labelledby="h-map">
+  <p class="eyebrow">03 · MAP</p>
+  <h2 id="h-map">Application dependency mapping</h2>
+  <p class="lede">This is the evidence base for every policy you will ever write. It answers: who talks to whom, over what, how often, and — most importantly — <em>why</em>.</p>
+
+  <div class="card">
+    <div class="spread">
+      <h3 style="margin:0">Dependency map</h3>
+      <div class="row">
+        <button class="btn small" id="mapShowAll" type="button">Show all layers</button>
+        <button class="btn small" id="mapAppsOnly" type="button">Application paths only</button>
+        <button class="btn small" id="mapSurprise" type="button">Reveal the surprise</button>
+      </div>
+    </div>
+    <div class="mapstage" style="margin-top:12px">
+      <svg id="mapSvg" aria-hidden="true"></svg>
+      <div class="mapgrid" id="mapGrid"></div>
+    </div>
+    <div class="legend">
+      <span><i style="border-color:#31c07a"></i>Expected / documented dependency</span>
+      <span><i style="border-color:#e2a33c;border-top-style:dashed"></i>Unexpected / undocumented</span>
+      <span><i style="border-color:#e2554f"></i>Blocked by policy (in enforce mode)</span>
+    </div>
+    <p class="tiny dim" style="margin-top:6px">SIMULATION — fictional workloads and fictional dependencies. No real corporate topology is represented.</p>
+  </div>
+
+  <div class="card">
+    <h3 id="mapDetailTitle">Workload detail</h3>
+    <p class="muted small" id="mapDetailHint">Select any workload in the map above to inspect its communication pattern.</p>
+    <div id="mapDetail"></div>
+  </div>
+
+  <div class="card" id="surpriseCard" hidden>
+    <h3>“The surprise” — why blind rule-writing is dangerous</h3>
+    <p>The application appears to work normally. Then dependency mapping reveals that it also communicates with an unexpected legacy service that nobody documented.</p>
+    <div class="note bad">
+      <p><strong>UNDOCUMENTED DEPENDENCY:</strong> <code>Trading Application → Legacy Batch Service</code></p>
+      <p class="small">If a team had written firewall rules from documentation alone, this flow would have been blocked during enforcement — potentially breaking a nightly batch process at an inconvenient hour.</p>
+    </div>
+    <p><strong>The lesson:</strong> dependency discovery comes before enforcement. Observed traffic is evidence; documentation is a hypothesis.</p>
+  </div>
+
+  <div class="phasefoot row spread" style="margin-top:18px">
+    <button class="btn ghost" data-goto="discover" type="button">← Back</button>
+    <div class="row">
+      <button class="btn ghost" data-complete="map" type="button">Mark phase complete</button>
+      <button class="btn primary" data-goto="classify" type="button">Next: Classify →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 04 CLASSIFY ============================== -->
+<section class="phase" id="s-classify" data-phase="classify" aria-labelledby="h-classify">
+  <p class="eyebrow">04 · CLASSIFY</p>
+  <h2 id="h-classify">Put everything into the right bucket</h2>
+  <p class="lede">Classification decides how much attention, governance and control each workload receives. It is not a technical exercise alone — business context matters just as much.</p>
+
+  <div class="card">
+    <div class="spread">
+      <h3 style="margin:0">Classify by business criticality</h3>
+      <span class="tag">Click a workload, then a bucket — or drag and drop</span>
+    </div>
+    <div class="board" id="boardCrit" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card">
+    <div class="spread">
+      <h3 style="margin:0">Classify by role</h3>
+      <span class="tag">Click a workload, then a bucket — or drag and drop</span>
+    </div>
+    <div class="board" id="boardRole" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card">
+    <h3>Business context — why technical classification is not enough</h3>
+    <div class="grid g2">
+      <div>
+        <h4>Technically…</h4>
+        <p>A database is just a database. It stores rows, answers queries, runs backups.</p>
+      </div>
+      <div>
+        <h4>But in business terms…</h4>
+        <p>That same database may support a critical trading application with regulatory reporting obligations and a recovery time objective measured in minutes.</p>
+      </div>
+    </div>
+    <h4>Policy design should therefore consider</h4>
+    <div class="grid g3">
+      <div class="metric"><div class="k">Business criticality</div><div class="n">What happens if this stops?</div></div>
+      <div class="metric"><div class="k">Data sensitivity</div><div class="n">What data does it hold or touch?</div></div>
+      <div class="metric"><div class="k">Regulatory requirements</div><div class="n">What must be evidenced?</div></div>
+      <div class="metric"><div class="k">Application dependencies</div><div class="n">What breaks if this is isolated?</div></div>
+      <div class="metric"><div class="k">Operational importance</div><div class="n">Is it needed to run the estate?</div></div>
+      <div class="metric"><div class="k">Exposure</div><div class="n">Who can reach it today?</div></div>
+      <div class="metric"><div class="k">Ownership</div><div class="n">Who approves change?</div></div>
+    </div>
+  </div>
+
+  <div class="phasefoot row spread" style="margin-top:18px">
+    <button class="btn ghost" data-goto="map" type="button">← Back</button>
+    <div class="row">
+      <button class="btn ghost" data-complete="classify" type="button">Mark phase complete</button>
+      <button class="btn primary" data-goto="design" type="button">Next: Design zones &amp; policy →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 05 DESIGN ============================== -->
+<section class="phase" id="s-design" data-phase="design" aria-labelledby="h-design">
+  <p class="eyebrow">05 · DESIGN</p>
+  <h2 id="h-design">Security zones and policy design</h2>
+  <p class="lede">Microsegmentation policies should be based on business and application requirements, not arbitrary network boundaries.</p>
+
+  <div class="card">
+    <h3>Define security zones</h3>
+    <p class="muted small">Zones are a communication model, not a substitute for policy. Assign each workload to a zone. Click a workload, then a zone — or drag and drop.</p>
+    <div class="board" id="boardZone" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card">
+    <h3>Example policy set (fictional)</h3>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Source</th><th>Destination</th><th>Service</th><th>Action</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Trading App</td><td>Trading Database</td><td>Database</td><td><span class="pill g">ALLOW</span></td><td>Required by application</td></tr>
+          <tr><td>Trading App</td><td>HR Database</td><td>Database</td><td><span class="pill r">BLOCK</span></td><td>No business requirement</td></tr>
+          <tr><td>Trading App</td><td>Monitoring</td><td>Monitoring</td><td><span class="pill g">ALLOW</span></td><td>Required by infrastructure</td></tr>
+          <tr><td>Trading App</td><td>Unknown Server</td><td>Any</td><td><span class="pill r">BLOCK</span></td><td>Unclassified destination</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Policy Builder</h3>
+    <div class="grid g3">
+      <div><label class="f" for="pbSrc">Source</label><select id="pbSrc"></select></div>
+      <div><label class="f" for="pbDst">Destination</label><select id="pbDst"></select></div>
+      <div><label class="f" for="pbSvc">Service</label><select id="pbSvc"></select></div>
+      <div><label class="f" for="pbAct">Action</label><select id="pbAct">
+        <option value="allow">ALLOW</option><option value="block">BLOCK</option><option value="log">LOG ONLY</option>
+      </select></div>
+      <div><label class="f" for="pbJust">Justification</label><select id="pbJust">
+        <option>Required by application</option>
+        <option>Required by infrastructure</option>
+        <option>Security service</option>
+        <option>Business requirement</option>
+        <option>Temporary exception</option>
+      </select></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn primary wide" id="pbAdd" type="button">ADD POLICY</button></div>
+    </div>
+    <div id="pbResult" style="margin-top:12px" aria-live="polite"></div>
+  </div>
+
+  <div class="card">
+    <div class="spread">
+      <h3 style="margin:0">Live policy table</h3>
+      <div class="row">
+        <button class="btn small ghost" id="pbSeed" type="button">Restore example policies</button>
+        <button class="btn small ghost" id="pbClear" type="button">Clear all policies</button>
+      </div>
+    </div>
+    <div class="tblwrap" style="margin-top:10px">
+      <table>
+        <thead><tr><th>#</th><th>Source</th><th>Destination</th><th>Service</th><th>Action</th><th>Justification</th><th>Quality check</th><th></th></tr></thead>
+        <tbody id="polBody"></tbody>
+      </table>
+    </div>
+    <p class="tiny dim" style="margin-top:8px">Educational policy-quality check — a heuristic to teach the reasoning, not a production validation engine.</p>
+  </div>
+
+  <div class="phasefoot row spread" style="margin-top:18px">
+    <button class="btn ghost" data-goto="classify" type="button">← Back</button>
+    <div class="row">
+      <button class="btn ghost" data-complete="design" type="button">Mark phase complete</button>
+      <button class="btn primary" data-goto="pilot" type="button">Next: Observe &amp; pilot →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 06 PILOT ============================== -->
+<section class="phase" id="s-pilot" data-phase="pilot" aria-labelledby="h-pilot">
+  <p class="eyebrow">06 · MODEL &amp; PILOT</p>
+  <h2 id="h-pilot">First watch. Then enforce.</h2>
+  <p class="lede">Observe mode shows you what would happen before anything is blocked. Shadow policy predicts the impact. Only then do you pilot with a small scope.</p>
+
+  <div class="card">
+    <h3>Observe mode</h3>
+    <div class="grid g3">
+      <div class="metric"><div class="k">Traffic observed</div><div class="n">Every flow is recorded. Nothing is blocked.</div></div>
+      <div class="metric"><div class="k">Policies simulated</div><div class="n">Decisions are calculated but not applied.</div></div>
+      <div class="metric"><div class="k">Enforcement</div><div class="n">Off. The environment is untouched.</div></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn primary" id="shadowRun" type="button">RUN SHADOW POLICY SIMULATION</button>
+      <span class="tag sim">SIMULATION</span>
+    </div>
+    <div id="shadowOut" style="margin-top:12px" aria-live="polite"></div>
+  </div>
+
+  <div class="card">
+    <h3>Pilot scope</h3>
+    <p class="muted small">A large enterprise should not immediately microsegment every workload. Choose a pilot scope:</p>
+    <div class="grid g2">
+      <div>
+        <label class="f" for="pilotScope">Pilot candidate</label>
+        <select id="pilotScope">
+          <option value="app">Business application (Trading Application path)</option>
+          <option value="dev">Development environment</option>
+          <option value="lowrisk">Low-risk internal service (Internal Portal)</option>
+          <option value="infra">Non-critical infrastructure (Configuration Management)</option>
+        </select>
+        <p class="tiny dim" style="margin-top:8px">Example pilot scope: 12 application servers, 4 databases, 2 monitoring systems, 1 backup system. Fictional.</p>
+      </div>
+      <div>
+        <h4>Why pilot selection matters</h4>
+        <ul class="small muted" style="padding-left:18px;margin:0">
+          <li>Enough complexity to be realistic.</li>
+          <li>Enough business tolerance to allow recovery.</li>
+          <li>Known, engaged application owners.</li>
+          <li>Monitoring and rollback already proven.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="spread">
+      <h3 style="margin:0">Pilot simulator</h3>
+      <button class="btn primary" id="startPilot" type="button">START PILOT</button>
+    </div>
+    <div class="steps" id="pilotSteps" style="margin-top:12px" aria-live="polite">
+      <span class="step" data-p="0">Discover</span><span class="arrow">↓</span>
+      <span class="step" data-p="1">Observe</span><span class="arrow">↓</span>
+      <span class="step" data-p="2">Model</span><span class="arrow">↓</span>
+      <span class="step" data-p="3">Review</span><span class="arrow">↓</span>
+      <span class="step" data-p="4">Enforce</span><span class="arrow">↓</span>
+      <span class="step" data-p="5">Monitor</span>
+    </div>
+    <div id="pilotOut" style="margin-top:12px" aria-live="polite"></div>
+  </div>
+
+  <div class="phasefoot row spread" style="margin-top:18px">
+    <button class="btn ghost" data-goto="design" type="button">← Back</button>
+    <div class="row">
+      <button class="btn ghost" data-complete="pilot" type="button">Mark phase complete</button>
+      <button class="btn primary" data-goto="enforce" type="button">Next: Enforce →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 07 ENFORCE ============================== -->
+<section class="phase" id="s-enforce" data-phase="enforce" aria-labelledby="h-enforce">
+  <p class="eyebrow">07 · ENFORCE</p>
+  <h2 id="h-enforce">Observe → Simulate → Enforce</h2>
+  <p class="lede">Observe means you see traffic. Simulate means you predict the effect. Enforce means unauthorised traffic is actually blocked.</p>
+
+  <div class="card">
+    <div class="steps" style="margin-bottom:12px">
+      <span class="step" id="stObserve">OBSERVE</span><span class="arrow">↓</span>
+      <span class="step" id="stSimulate">SIMULATE</span><span class="arrow">↓</span>
+      <span class="step" id="stEnforce">ENFORCE</span>
+    </div>
+
+    <fieldset style="border:1px solid var(--line);border-radius:10px;padding:12px;margin:0">
+      <legend class="f" style="padding:0 6px">Policy enforcement mode</legend>
+      <div class="row" role="radiogroup" aria-label="Enforcement mode">
+        <label class="btn small"><input type="radio" name="enf" value="observe" checked> ○ OBSERVE</label>
+        <label class="btn small"><input type="radio" name="enf" value="simulate"> ○ SIMULATE</label>
+        <label class="btn small"><input type="radio" name="enf" value="enforce"> ● ENFORCE</label>
+      </div>
+    </fieldset>
+
+    <div class="grid g4" style="margin-top:12px">
+      <div class="metric"><div class="k">Allowed traffic</div><div class="v green" id="enfAllowed">0</div><div class="n">Model flows permitted</div></div>
+      <div class="metric"><div class="k">Blocked traffic</div><div class="v red" id="enfBlocked">0</div><div class="n">Denied by policy</div></div>
+      <div class="metric"><div class="k">Needs investigation</div><div class="v amber" id="enfUnknown">0</div><div class="n">Unexplained flows</div></div>
+      <div class="metric"><div class="k">Operational risk</div><div class="v" id="enfOps">—</div><div class="n">Required flows blocked</div></div>
+    </div>
+
+    <div class="flowbar" style="margin-top:12px" aria-hidden="true">
+      <span class="fb-g" id="barG" style="width:60%">Allowed</span>
+      <span class="fb-a" id="barA" style="width:20%">Investigate</span>
+      <span class="fb-r" id="barR" style="width:20%">Blocked</span>
+    </div>
+    <div id="enfOut" style="margin-top:12px" aria-live="polite"></div>
+
+    <div class="row" style="margin-top:14px">
+      <button class="btn danger" id="rollbackBtn" type="button">EMERGENCY ROLLBACK</button>
+      <span class="small muted">Rollback capability must exist before enforcement begins.</span>
+    </div>
+    <div id="rollbackOut" aria-live="polite"></div>
+  </div>
+
+  <div class="card">
+    <h3>Failure scenarios</h3>
+    <p class="muted small">Realistic enterprise problems appear during enforcement. Choose a response.</p>
+    <div class="row" id="scenarioBtns" style="margin-top:8px"></div>
+    <div id="scenarioOut" style="margin-top:12px" aria-live="polite"></div>
+  </div>
+
+  <div class="card">
+    <h3>Exception workflow</h3>
+    <p class="muted small">Enterprises will encounter cases where a standard policy cannot immediately be applied. Exceptions must be governed.</p>
+    <div class="steps small" style="margin:10px 0">
+      <span class="step">REQUEST</span><span class="arrow">↓</span>
+      <span class="step">BUSINESS JUSTIFICATION</span><span class="arrow">↓</span>
+      <span class="step">SECURITY REVIEW</span><span class="arrow">↓</span>
+      <span class="step">RISK REVIEW</span><span class="arrow">↓</span>
+      <span class="step">APPROVAL</span><span class="arrow">↓</span>
+      <span class="step">TIME-LIMITED EXCEPTION</span><span class="arrow">↓</span>
+      <span class="step">REVIEW</span><span class="arrow">↓</span>
+      <span class="step">REMOVE OR RENEW</span>
+    </div>
+    <div class="grid g3">
+      <div><label class="f" for="exReq">Requester</label><input type="text" id="exReq" placeholder="e.g. trading-platform" value="trading-platform"></div>
+      <div><label class="f" for="exJust">Business justification</label><input type="text" id="exJust" placeholder="e.g. nightly batch reconciliation" value="nightly batch reconciliation"></div>
+      <div><label class="f" for="exDays">Duration (days)</label><input type="number" id="exDays" min="1" max="180" value="30"></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn primary" id="exSubmit" type="button">SUBMIT EXCEPTION REQUEST</button>
+    </div>
+    <div id="exList" style="margin-top:12px"></div>
+    <div class="note warn">
+      <p><strong>Exceptions should not quietly become permanent architecture.</strong> Every exception needs an expiry date, an owner and a review.</p>
+    </div>
+  </div>
+
+  <div class="phasefoot row spread" style="margin-top:18px">
+    <button class="btn ghost" data-goto="pilot" type="button">← Back</button>
+    <div class="row">
+      <button class="btn ghost" data-complete="enforce" type="button">Mark phase complete</button>
+      <button class="btn primary" data-goto="operate" type="button">Next: Operate →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 08 OPERATE ============================== -->
+<section class="phase" id="s-operate" data-phase="operate" aria-labelledby="h-operate">
+  <p class="eyebrow">08 · OPERATE</p>
+  <h2 id="h-operate">Microsegmentation operations centre</h2>
+  <p class="lede">Deployment is the beginning, not the end. Policies must be monitored, reviewed, updated and retired as the environment changes.</p>
+
+  <div class="card">
+    <div class="spread">
+      <h3 style="margin:0">Operations dashboard</h3>
+      <div class="row">
+        <span class="tag sim">SIMULATION DATA</span>
+        <button class="btn small" id="opsRefresh" type="button">Refresh telemetry</button>
+      </div>
+    </div>
+    <div class="grid g3" style="margin-top:12px" id="opsMetrics"></div>
+  </div>
+
+  <div class="card">
+    <h3>Policy drift detector</h3>
+    <p class="muted small">The environment changes. Policies can become wrong even when nobody intentionally changes them.</p>
+    <div class="grid g3 small muted" style="margin:8px 0">
+      <span>• Application moved</span><span>• Server replaced</span><span>• Cloud migration</span>
+      <span>• New service added</span><span>• Business process changed</span><span>• Old system retired</span>
+    </div>
+    <div id="driftList" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <h3>Continuous policy lifecycle</h3>
+    <div class="steps" id="lifecycleSteps" style="margin:10px 0"></div>
+    <div id="lifecycleInfo" class="note"><p class="small muted">Select a lifecycle stage to see what it involves.</p></div>
+    <p>Policies are operational objects, not permanent configuration carved into stone tablets.</p>
+  </div>
+
+  <div class="card">
+    <h3>Change management simulator</h3>
+    <p class="muted small">Scenario: the trading application is moving to a new database.</p>
+    <div class="row" style="margin-top:8px">
+      <button class="btn primary" id="cmProper" type="button">Run the full workflow</button>
+      <button class="btn" id="cmSkip" type="button">Skip impact analysis</button>
+    </div>
+    <div id="cmOut" style="margin-top:12px" aria-live="polite"></div>
+  </div>
+
+  <div class="card">
+    <h3>Security incident simulator</h3>
+    <p class="muted small">Fictional scenario: the trading application is compromised.</p>
+    <div class="row" style="margin-top:8px">
+      <button class="btn primary" id="incRun" type="button">Run incident with segmentation ON</button>
+      <button class="btn" id="incOff" type="button">Run incident with segmentation OFF</button>
+    </div>
+    <div id="incOut" style="margin-top:12px" aria-live="polite"></div>
+    <div class="note">
+      <p class="small">Microsegmentation can reduce potential lateral movement and blast radius. It does not guarantee that an attack will be stopped.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Where microsegmentation fits in Zero Trust</h3>
+    <div class="grid g2">
+      <div>
+        <p class="muted small">Microsegmentation can support Zero Trust, but microsegmentation is not the same thing as Zero Trust.</p>
+        <ul class="small" style="padding-left:18px;margin:0">
+          <li><strong>Identity</strong> — who or what is acting.</li>
+          <li><strong>Device trust</strong> — is the device known and healthy.</li>
+          <li><strong>Authentication</strong> — proving the claim.</li>
+          <li><strong>Authorization</strong> — what that identity may do.</li>
+          <li><strong>Least privilege</strong> — only what is required.</li>
+          <li><strong>Continuous verification</strong> — trust is re-evaluated, not granted once.</li>
+          <li><strong>Microsegmentation</strong> — limiting which workloads can reach which.</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Microsegmentation vs. traditional segmentation</h4>
+        <div class="grid g2">
+          <div class="metric">
+            <div class="k">Traditional</div>
+            <pre style="margin:6px 0 0;border:0;background:transparent;padding:0">NETWORK
+├── VLAN A
+├── VLAN B
+└── VLAN C</pre>
+          </div>
+          <div class="metric">
+            <div class="k">Microsegmentation</div>
+            <pre style="margin:6px 0 0;border:0;background:transparent;padding:0">WORKLOAD A
+├── DB A      ✓
+├── DNS       ✓
+└── SERVER B  ✕
+WORKLOAD B
+├── DB B      ✓
+└── SERVER A  ✕</pre>
+          </div>
+        </div>
+        <p class="small muted" style="margin-top:8px">Traditional network segmentation often operates at larger boundaries. Microsegmentation can apply more granular workload-level policies.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Microsegmentation vs. firewall</h3>
+    <p>Microsegmentation does not necessarily mean replacing firewalls. It adds a more granular layer inside a defence-in-depth model.</p>
+    <div class="steps" style="margin-top:10px">
+      <span class="step">PERIMETER FIREWALL</span><span class="arrow">↓</span>
+      <span class="step">NETWORK SEGMENTATION</span><span class="arrow">↓</span>
+      <span class="step on">MICROSEGMENTATION</span><span class="arrow">↓</span>
+      <span class="step">WORKLOAD / APPLICATION POLICY</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Organisational model</h3>
+    <p class="muted small">Microsegmentation is not a single team's project. Responsibilities overlap deliberately.</p>
+    <div class="grid g3">
+      <div class="metric"><div class="k">Security Architecture</div><div class="n">Defines strategy and policy standards.</div></div>
+      <div class="metric"><div class="k">Network Security</div><div class="n">Provides network controls and enforcement points.</div></div>
+      <div class="metric"><div class="k">Endpoint / Server Engineering</div><div class="n">Provides workload visibility and deployment support.</div></div>
+      <div class="metric"><div class="k">Application Teams</div><div class="n">Understand application dependencies and validate policy.</div></div>
+      <div class="metric"><div class="k">Cloud Engineering</div><div class="n">Handles cloud workloads and cloud-native controls.</div></div>
+      <div class="metric"><div class="k">SRE / Operations</div><div class="n">Maintains reliability, rollback and incident response.</div></div>
+      <div class="metric"><div class="k">Risk / Compliance</div><div class="n">Defines regulatory requirements and evidence.</div></div>
+      <div class="metric"><div class="k">Service Desk</div><div class="n">Handles operational incidents and first-line triage.</div></div>
+    </div>
+  </div>
+
+  <div class="card raci">
+    <h3>RACI — who does what</h3>
+    <p class="muted small">Click any cell to understand why that responsibility exists. A = Accountable, R = Responsible, C = Consulted, I = Informed.</p>
+    <div id="raciTable" style="margin-top:10px"></div>
+    <div id="raciInfo" class="note" aria-live="polite" style="margin-top:12px"><p class="small muted">Select a cell to see the reasoning.</p></div>
+  </div>
+
+  <div class="card">
+    <h3>The SRE / operations perspective</h3>
+    <div class="note bad"><p><strong>A technically perfect security policy that breaks production is not a successful implementation.</strong></p></div>
+    <div class="grid g2">
+      <div>
+        <h4>Operational requirements</h4>
+        <ul class="small" style="padding-left:18px;margin:0">
+          <li>Availability</li><li>Change management</li><li>Monitoring</li><li>Rollback</li>
+          <li>Dependency discovery</li><li>Incident response</li><li>Automation</li><li>Documentation</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Why it matters</h4>
+        <p class="small">Security controls that are not operable will be worked around. If a policy blocks a legitimate flow at 02:00 and nobody can restore service, the organisation will not trust the programme — and the exception list will grow until it becomes the architecture.</p>
+        <p class="small"><strong>Security and reliability must be designed together.</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="phasefoot row spread" style="margin-top:18px">
+    <button class="btn ghost" data-goto="enforce" type="button">← Back</button>
+    <div class="row">
+      <button class="btn ghost" data-complete="operate" type="button">Mark phase complete</button>
+      <button class="btn primary" data-goto="scale" type="button">Next: Scale →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 09 SCALE ============================== -->
+<section class="phase" id="s-scale" data-phase="scale" aria-labelledby="h-scale">
+  <p class="eyebrow">09 · SCALE</p>
+  <h2 id="h-scale">Scale the program</h2>
+  <p class="lede">Enterprise-wide microsegmentation is a programme, not a deployment. It expands in phases, and automation becomes essential as the estate grows.</p>
+
+  <div class="card">
+    <h3>Enterprise rollout map</h3>
+    <div class="steps" style="margin-top:10px;flex-direction:column;align-items:stretch">
+      <span class="step on">PHASE 1 · Pilot — 10–20 workloads</span>
+      <span class="arrow" style="text-align:center">↓</span>
+      <span class="step">PHASE 2 · Critical applications — 100 workloads</span>
+      <span class="arrow" style="text-align:center">↓</span>
+      <span class="step">PHASE 3 · Production estate — 500 workloads</span>
+      <span class="arrow" style="text-align:center">↓</span>
+      <span class="step">PHASE 4 · Enterprise scale — 1,000+ workloads</span>
+    </div>
+    <p class="tiny dim" style="margin-top:10px">Fictional example scale points. Real thresholds depend on the organisation.</p>
+  </div>
+
+  <div class="card">
+    <h3>Complexity estimator</h3>
+    <div class="grid g3">
+      <div><label class="f" for="scWl">Workloads: <span id="scWlV">1284</span></label><input type="range" id="scWl" min="100" max="100000" step="100" value="1284"></div>
+      <div><label class="f" for="scApp">Applications: <span id="scAppV">86</span></label><input type="range" id="scApp" min="5" max="2000" step="5" value="86"></div>
+      <div><label class="f" for="scTeam">Teams: <span id="scTeamV">24</span></label><input type="range" id="scTeam" min="1" max="300" step="1" value="24"></div>
+      <div><label class="f" for="scPol">Policies: <span id="scPolV">4821</span></label><input type="range" id="scPol" min="10" max="200000" step="10" value="4821"></div>
+      <div><label class="f" for="scCov">Enforcement coverage: <span id="scCovV">48</span>%</label><input type="range" id="scCov" min="0" max="100" step="1" value="48"></div>
+    </div>
+    <div id="scaleOut" class="grid g3" style="margin-top:14px"></div>
+    <p class="tiny dim" style="margin-top:10px">Educational estimates only. These are simulation outputs, not a production sizing model.</p>
+  </div>
+
+  <div class="card">
+    <h3>Automation maturity</h3>
+    <div class="steps" id="autoSteps" style="margin:10px 0"></div>
+    <div id="autoInfo" class="note"><p class="small muted">Select a maturity level.</p></div>
+    <div class="grid g2" style="margin-top:10px">
+      <div class="metric"><div class="k">Benefits</div><div class="n">Consistency, speed, fewer manual errors, auditable change, repeatable validation.</div></div>
+      <div class="metric"><div class="k">Risks</div><div class="n">Automating a wrong assumption scales the mistake efficiently. Automate only what you already understand.</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Policy-as-code (illustrative example)</h3>
+    <p class="muted small">Treating policies as managed configuration makes them easier to review, test, version and audit. Syntax below is a generic illustrative example — not a specific vendor format.</p>
+    <pre>application: trading
+destination: trading-db
+service: database
+action: allow
+reason: required dependency
+owner: trading-platform
+expires: never</pre>
+    <div class="row">
+      <button class="btn small" id="copyPac" type="button">Copy example</button>
+      <span class="tiny dim">No external system is contacted.</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Adversarial mode — red team the strategy</h3>
+    <p class="muted small">Choose a deliberately bad strategic decision and see the failure mode.</p>
+    <div class="grid g3" id="advGrid" style="margin-top:10px"></div>
+    <div id="advOut" style="margin-top:12px" aria-live="polite"></div>
+  </div>
+
+  <div class="card">
+    <h3>Design your microsegmentation program</h3>
+    <p class="muted small">Adjust the profile of your fictional enterprise and generate an educational program recommendation.</p>
+    <div class="grid g3">
+      <div><label class="f" for="bSize">Enterprise size</label><select id="bSize">
+        <option value="1">Regional firm</option><option value="2">National enterprise</option>
+        <option value="3" selected>Global financial institution</option><option value="4">Global systemically important institution</option>
+      </select></div>
+      <div><label class="f" for="bWl">Workload count: <span id="bWlV">12000</span></label><input type="range" id="bWl" min="100" max="100000" step="100" value="12000"></div>
+      <div><label class="f" for="bCx">Application complexity: <span id="bCxV">70</span></label><input type="range" id="bCx" min="0" max="100" value="70"></div>
+      <div><label class="f" for="bLeg">Legacy dependency: <span id="bLegV">65</span></label><input type="range" id="bLeg" min="0" max="100" value="65"></div>
+      <div><label class="f" for="bCloud">Cloud adoption: <span id="bCloudV">55</span></label><input type="range" id="bCloud" min="0" max="100" value="55"></div>
+      <div><label class="f" for="bReg">Regulatory pressure: <span id="bRegV">80</span></label><input type="range" id="bReg" min="0" max="100" value="80"></div>
+      <div><label class="f" for="bAuto">Automation: <span id="bAutoV">40</span></label><input type="range" id="bAuto" min="0" max="100" value="40"></div>
+      <div><label class="f" for="bMat">Security maturity: <span id="bMatV">60</span></label><input type="range" id="bMat" min="0" max="100" value="60"></div>
+      <div><label class="f" for="bOwner">Application-owner participation: <span id="bOwnerV">50</span></label><input type="range" id="bOwner" min="0" max="100" value="50"></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn primary" id="bGenerate" type="button">GENERATE PROGRAM RECOMMENDATION</button>
+    </div>
+    <div id="bOut" style="margin-top:14px" aria-live="polite"></div>
+    <div class="note warn"><p class="small"><strong>Educational planning simulation, not a production architecture recommendation.</strong></p></div>
+  </div>
+
+  <div class="phasefoot row spread" style="margin-top:18px">
+    <button class="btn ghost" data-goto="operate" type="button">← Back</button>
+    <div class="row">
+      <button class="btn ghost" data-complete="scale" type="button">Mark phase complete</button>
+      <button class="btn primary" data-goto="exec" type="button">Next: Executive view →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 10 EXECUTIVE VIEW ============================== -->
+<section class="phase" id="s-exec" data-phase="exec" aria-labelledby="h-exec">
+  <p class="eyebrow">10 · EXECUTIVE VIEW</p>
+  <h2 id="h-exec">Executive and engineering view</h2>
+  <p class="lede">The same programme, described for two very different audiences.</p>
+
+  <div class="card">
+    <div class="modesw inline" role="group" aria-label="Dashboard audience" style="margin-bottom:12px">
+      <button id="viewExec" class="on" aria-pressed="true" type="button">EXECUTIVE</button>
+      <button id="viewEng" aria-pressed="false" type="button">ENGINEERING</button>
+    </div>
+
+    <div id="dashExec">
+      <div class="spread"><h3 style="margin:0">PROGRAM STATUS</h3><span class="tag sim">FICTIONAL SIMULATION DATA</span></div>
+      <div class="grid g3" style="margin-top:12px">
+        <div class="metric"><div class="k">Coverage</div><div class="v blue" id="exCoverage">72%</div><div class="n">Workloads under segmentation</div></div>
+        <div class="metric"><div class="k">Enforcement</div><div class="v green" id="exEnforce">48%</div><div class="n">Policies actually enforcing</div></div>
+        <div class="metric"><div class="k">Unknown traffic</div><div class="v amber" id="exUnknown">6%</div><div class="n">Unexplained communication</div></div>
+        <div class="metric"><div class="k">Active exceptions</div><div class="v amber" id="exExc">14</div><div class="n">Time-limited approvals</div></div>
+        <div class="metric"><div class="k">Policy drift</div><div class="v red" id="exDrift">8</div><div class="n">Policies requiring review</div></div>
+        <div class="metric"><div class="k">Critical apps protected</div><div class="v green" id="exCrit">93%</div><div class="n">Of classified critical apps</div></div>
+      </div>
+
+      <h3>What this means</h3>
+      <p class="muted small" id="exMeaning"></p>
+
+      <h3>What executives should ask</h3>
+      <ul class="small" style="padding-left:18px">
+        <li>Which critical applications are protected — and which are not?</li>
+        <li>How many unknown dependencies remain?</li>
+        <li>How many exceptions exist, and how quickly are they removed?</li>
+        <li>What operational impact has occurred because of policy changes?</li>
+        <li>Which teams still need to participate?</li>
+      </ul>
+    </div>
+
+    <div id="dashEng" hidden>
+      <div class="spread"><h3 style="margin:0">ENGINEERING VIEW</h3><span class="tag sim">FICTIONAL SIMULATION DATA</span></div>
+      <div class="grid g3" style="margin-top:12px" id="engMetrics"></div>
+      <h3>Change history (simulated)</h3>
+      <div class="tblwrap">
+        <table>
+          <thead><tr><th>Time</th><th>Actor</th><th>Change</th><th>Result</th></tr></thead>
+          <tbody id="engHistory"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Implementation roadmap</h3>
+    <p class="muted small">Each phase has an objective, inputs, activities, outputs, people, risks and example exit criteria.</p>
+    <div id="roadmap" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <h3>What can go wrong?</h3>
+    <div class="grid g3">
+      <div>
+        <h4>Technical risks</h4>
+        <ul class="small muted" style="padding-left:18px">
+          <li>Unknown dependencies</li><li>Legacy systems</li><li>Incorrect policies</li>
+          <li>Tool failures</li><li>Visibility gaps</li><li>Policy drift</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Operational risks</h4>
+        <ul class="small muted" style="padding-left:18px">
+          <li>Application outages</li><li>Change collisions</li><li>Emergency access problems</li>
+          <li>Poor ownership</li><li>Excessive manual work</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Organisational &amp; program risks</h4>
+        <ul class="small muted" style="padding-left:18px">
+          <li>Security vs. operations conflict</li><li>Unclear accountability</li>
+          <li>Lack of application-owner participation</li><li>Exception sprawl</li>
+          <li>Automating before understanding</li>
+          <li>Measuring deployment instead of risk reduction</li>
+          <li>Treating microsegmentation as a one-time project</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>The ideal process</h3>
+    <div class="steps" style="flex-direction:column;align-items:stretch" id="idealSteps"></div>
+  </div>
+
+  <div class="card">
+    <h3>Final takeaway</h3>
+    <p class="lede">Microsegmentation is not a firewall rule-writing exercise.</p>
+    <p>It is an ongoing process of understanding workloads, understanding dependencies, defining legitimate communication, enforcing least-privilege connectivity, monitoring behaviour, and continuously adapting policies as the environment changes.</p>
+    <p><strong>The technology matters. But the operating model matters just as much.</strong></p>
+  </div>
+
+  <div class="card">
+    <h3>The 60-second summary</h3>
+    <div class="steps" style="flex-direction:column;align-items:stretch">
+      <span class="step">1. KNOW WHAT YOU HAVE</span><span class="arrow" style="text-align:center">↓</span>
+      <span class="step">2. KNOW WHAT TALKS TO WHAT</span><span class="arrow" style="text-align:center">↓</span>
+      <span class="step">3. UNDERSTAND WHY</span><span class="arrow" style="text-align:center">↓</span>
+      <span class="step">4. CLASSIFY THE WORKLOADS</span><span class="arrow" style="text-align:center">↓</span>
+      <span class="step">5. DESIGN SMALL, SPECIFIC POLICIES</span><span class="arrow" style="text-align:center">↓</span>
+      <span class="step">6. WATCH BEFORE BLOCKING</span><span class="arrow" style="text-align:center">↓</span>
+      <span class="step">7. PILOT</span><span class="arrow" style="text-align:center">↓</span>
+      <span class="step">8. ENFORCE CAREFULLY</span><span class="arrow" style="text-align:center">↓</span>
+      <span class="step">9. MONITOR AND ROLLBACK WHEN NECESSARY</span><span class="arrow" style="text-align:center">↓</span>
+      <span class="step">10. SCALE AND CONTINUOUSLY IMPROVE</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Core principles</h3>
+    <div class="grid g2" id="principles"></div>
+  </div>
+
+  <div class="card" style="border-color:#3a2b2b">
+    <h3>Reset lab</h3>
+    <p class="muted small">Clears local progress, deletes simulated policies, resets simulator configuration and the roadmap, and returns the lab to its initial state.</p>
+    <button class="btn danger" id="resetBtn2" type="button">RESET LAB</button>
+  </div>
+
+  <div class="phasefoot row spread" style="margin-top:18px">
+    <button class="btn ghost" data-goto="scale" type="button">← Back</button>
+    <button class="btn ghost" data-complete="exec" type="button">Mark phase complete</button>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <p class="contactline"><strong>Contact:</strong> <a href="mailto:densanchez@gmail.com">densanchez@gmail.com</a></p>
+    <p><strong>Educational simulation.</strong> This lab uses a fictionalised enterprise environment inspired by a large global financial institution. It does not represent, and must not be read as representing, the actual internal network, topology, addresses, policies, systems or security posture of any real organisation.</p>
+    <p>All examples, metrics, workloads and scenarios are fictional and generated for teaching purposes. Content is limited to general microsegmentation and security engineering practice. No data is collected, transmitted or shared — progress is stored only in your browser's local storage.</p>
+    <p class="dim">MICROSEGMENTATION STRATEGY LAB · offline-capable single-file build</p>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* =========================================================
+   UTILITIES
+   ========================================================= */
+const $  = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
+const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = (n) => Number(n).toLocaleString('en-US');
+const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let toastTimer = null;
+function toast(msg){
+  const t = $('#toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('on'), 2600);
+}
+
+/* =========================================================
+   FICTIONAL DATA MODEL
+   ========================================================= */
+const ROLES = ['Application','Database','Infrastructure','Management','Security','Backup','User endpoint','Cloud','Third-party'];
+const CRITS = ['Critical','High','Medium','Low','Unknown'];
+const SERVICES = ['HTTPS','Database','DNS','Authentication','Monitoring','Backup','Management','Any'];
+
+/* layer used by the dependency map: endpoint | app | data | infra */
+const WORKLOADS = [
+  {id:'trading-app', name:'Trading Application', role:'Application', crit:'Critical', layer:'app', owner:'Trading Platform', unknown:false,
+   deps:[
+     {to:'trading-db', svc:'Database', why:'Required by application', dir:'outbound', freq:'Very high', expected:true},
+     {to:'auth-service', svc:'Authentication', why:'Required by application', dir:'outbound', freq:'High', expected:true},
+     {to:'dns', svc:'DNS', why:'Required by infrastructure', dir:'outbound', freq:'High', expected:true},
+     {to:'monitoring', svc:'Monitoring', why:'Required by infrastructure', dir:'outbound', freq:'Continuous', expected:true},
+     {to:'backup', svc:'Backup', why:'Required by infrastructure', dir:'outbound', freq:'Nightly', expected:true},
+     {to:'patch', svc:'Management', why:'Required by infrastructure', dir:'outbound', freq:'Weekly', expected:true},
+     {to:'legacy-batch', svc:'Any', why:'Undocumented — discovered by traffic analysis', dir:'bidirectional', freq:'Nightly', expected:false}
+   ]},
+  {id:'hr-app', name:'HR Application', role:'Application', crit:'Medium', layer:'app', owner:'People Systems', unknown:false,
+   deps:[
+     {to:'hr-db', svc:'Database', why:'Required by application', dir:'outbound', freq:'High', expected:true},
+     {to:'auth-service', svc:'Authentication', why:'Required by application', dir:'outbound', freq:'High', expected:true},
+     {to:'dns', svc:'DNS', why:'Required by infrastructure', dir:'outbound', freq:'High', expected:true},
+     {to:'monitoring', svc:'Monitoring', why:'Required by infrastructure', dir:'outbound', freq:'Continuous', expected:true},
+     {to:'backup', svc:'Backup', why:'Required by infrastructure', dir:'outbound', freq:'Nightly', expected:true}
+   ]},
+  {id:'market-data', name:'Market Data', role:'Application', crit:'Critical', layer:'app', owner:'Market Data Engineering', unknown:false,
+   deps:[
+     {to:'md-db', svc:'Database', why:'Required by application', dir:'outbound', freq:'Very high', expected:true},
+     {to:'dns', svc:'DNS', why:'Required by infrastructure', dir:'outbound', freq:'High', expected:true},
+     {to:'monitoring', svc:'Monitoring', why:'Required by infrastructure', dir:'outbound', freq:'Continuous', expected:true},
+     {to:'auth-service', svc:'Authentication', why:'Required by application', dir:'outbound', freq:'Medium', expected:true}
+   ]},
+  {id:'internal-portal', name:'Internal Portal', role:'Application', crit:'Low', layer:'app', owner:'Digital Workplace', unknown:false,
+   deps:[
+     {to:'auth-service', svc:'Authentication', why:'Required by application', dir:'outbound', freq:'High', expected:true},
+     {to:'dns', svc:'DNS', why:'Required by infrastructure', dir:'outbound', freq:'High', expected:true},
+     {to:'monitoring', svc:'Monitoring', why:'Required by infrastructure', dir:'outbound', freq:'Continuous', expected:true}
+   ]},
+  {id:'legacy-batch', name:'Legacy Batch Service', role:'Application', crit:'Unknown', layer:'app', owner:'Unassigned', unknown:true,
+   deps:[
+     {to:'trading-db', svc:'Database', why:'Not documented — observed only', dir:'outbound', freq:'Nightly', expected:false},
+     {to:'dns', svc:'DNS', why:'Required by infrastructure', dir:'outbound', freq:'Low', expected:true}
+   ]},
+  {id:'auth-service', name:'Authentication Service', role:'Security', crit:'Critical', layer:'infra', owner:'Identity Platform', unknown:false,
+   deps:[
+     {to:'ad', svc:'Authentication', why:'Required by application', dir:'outbound', freq:'Very high', expected:true},
+     {to:'dns', svc:'DNS', why:'Required by infrastructure', dir:'outbound', freq:'High', expected:true},
+     {to:'monitoring', svc:'Monitoring', why:'Required by infrastructure', dir:'outbound', freq:'Continuous', expected:true}
+   ]},
+  {id:'trading-db', name:'Trading DB', role:'Database', crit:'Critical', layer:'data', owner:'Trading Platform', unknown:false,
+   deps:[
+     {to:'monitoring', svc:'Monitoring', why:'Required by infrastructure', dir:'outbound', freq:'Continuous', expected:true},
+     {to:'backup', svc:'Backup', why:'Required by infrastructure', dir:'outbound', freq:'Nightly', expected:true}
+   ]},
+  {id:'hr-db', name:'HR DB', role:'Database', crit:'Medium', layer:'data', owner:'People Systems', unknown:false,
+   deps:[
+     {to:'monitoring', svc:'Monitoring', why:'Required by infrastructure', dir:'outbound', freq:'Continuous', expected:true},
+     {to:'backup', svc:'Backup', why:'Required by infrastructure', dir:'outbound', freq:'Nightly', expected:true}
+   ]},
+  {id:'md-db', name:'Market Data DB', role:'Database', crit:'Critical', layer:'data', owner:'Market Data Engineering', unknown:false,
+   deps:[
+     {to:'monitoring', svc:'Monitoring', why:'Required by infrastructure', dir:'outbound', freq:'Continuous', expected:true},
+     {to:'backup', svc:'Backup', why:'Required by infrastructure', dir:'outbound', freq:'Nightly', expected:true}
+   ]},
+  {id:'cloud-db', name:'Cloud Database', role:'Cloud', crit:'Critical', layer:'data', owner:'Cloud Platform', unknown:false,
+   deps:[
+     {to:'monitoring', svc:'Monitoring', why:'Required by infrastructure', dir:'outbound', freq:'Continuous', expected:true},
+     {to:'backup', svc:'Backup', why:'Required by infrastructure', dir:'outbound', freq:'Nightly', expected:true}
+   ]},
+  {id:'dns', name:'DNS', role:'Infrastructure', crit:'High', layer:'infra', owner:'Network Services', unknown:false,
+   deps:[{to:'monitoring', svc:'Monitoring', why:'Required by infrastructure', dir:'outbound', freq:'Continuous', expected:true}]},
+  {id:'ad', name:'Active Directory', role:'Infrastructure', crit:'Critical', layer:'infra', owner:'Identity Platform', unknown:false,
+   deps:[
+     {to:'dns', svc:'DNS', why:'Required by infrastructure', dir:'outbound', freq:'High', expected:true},
+     {to:'monitoring', svc:'Monitoring', why:'Required by infrastructure', dir:'outbound', freq:'Continuous', expected:true},
+     {to:'backup', svc:'Backup', why:'Required by infrastructure', dir:'outbound', freq:'Nightly', expected:true}
+   ]},
+  {id:'monitoring', name:'Monitoring', role:'Management', crit:'High', layer:'infra', owner:'Observability Team', unknown:false,
+   deps:[{to:'dns', svc:'DNS', why:'Required by infrastructure', dir:'outbound', freq:'Medium', expected:true}]},
+  {id:'backup', name:'Backup', role:'Backup', crit:'High', layer:'infra', owner:'Data Protection', unknown:false,
+   deps:[
+     {to:'dns', svc:'DNS', why:'Required by infrastructure', dir:'outbound', freq:'Medium', expected:true},
+     {to:'ad', svc:'Authentication', why:'Required by infrastructure', dir:'outbound', freq:'Medium', expected:true}
+   ]},
+  {id:'patch', name:'Patch Management', role:'Management', crit:'Medium', layer:'infra', owner:'Endpoint Engineering', unknown:false,
+   deps:[
+     {to:'dns', svc:'DNS', why:'Required by infrastructure', dir:'outbound', freq:'Medium', expected:true},
+     {to:'ad', svc:'Authentication', why:'Required by infrastructure', dir:'outbound', freq:'Medium', expected:true}
+   ]},
+  {id:'cmdb', name:'Configuration Management', role:'Management', crit:'Medium', layer:'infra', owner:'IT Service Management', unknown:false,
+   deps:[
+     {to:'dns', svc:'DNS', why:'Required by infrastructure', dir:'outbound', freq:'Low', expected:true},
+     {to:'ad', svc:'Authentication', why:'Required by infrastructure', dir:'outbound', freq:'Low', expected:true}
+   ]},
+  {id:'cloud-api', name:'Cloud API', role:'Cloud', crit:'High', layer:'infra', owner:'Cloud Platform', unknown:false,
+   deps:[
+     {to:'cloud-db', svc:'Database', why:'Required by application', dir:'outbound', freq:'Very high', expected:true},
+     {to:'auth-service', svc:'Authentication', why:'Required by application', dir:'outbound', freq:'High', expected:true},
+     {to:'dns', svc:'DNS', why:'Required by infrastructure', dir:'outbound', freq:'High', expected:true},
+     {to:'monitoring', svc:'Monitoring', why:'Required by infrastructure', dir:'outbound', freq:'Continuous', expected:true}
+   ]},
+  {id:'cloud-app', name:'Cloud Application', role:'Cloud', crit:'High', layer:'infra', owner:'Cloud Platform', unknown:false,
+   deps:[
+     {to:'cloud-db', svc:'Database', why:'Required by application', dir:'outbound', freq:'High', expected:true},
+     {to:'cloud-api', svc:'HTTPS', why:'Required by application', dir:'outbound', freq:'High', expected:true},
+     {to:'auth-service', svc:'Authentication', why:'Required by application', dir:'outbound', freq:'High', expected:true}
+   ]},
+  {id:'third-party-api', name:'Third-party API Gateway', role:'Third-party', crit:'Medium', layer:'infra', owner:'Vendor Management', unknown:false,
+   deps:[
+     {to:'cloud-api', svc:'HTTPS', why:'Business requirement', dir:'outbound', freq:'Medium', expected:true},
+     {to:'dns', svc:'DNS', why:'Required by infrastructure', dir:'outbound', freq:'Low', expected:true}
+   ]},
+  {id:'trader-ws', name:'Trader Workstation', role:'User endpoint', crit:'High', layer:'endpoint', owner:'Trading Desktops', unknown:false,
+   deps:[
+     {to:'trading-app', svc:'HTTPS', why:'Required by application', dir:'outbound', freq:'Very high', expected:true},
+     {to:'market-data', svc:'HTTPS', why:'Required by application', dir:'outbound', freq:'Very high', expected:true},
+     {to:'auth-service', svc:'Authentication', why:'Required by application', dir:'outbound', freq:'High', expected:true},
+     {to:'dns', svc:'DNS', why:'Required by infrastructure', dir:'outbound', freq:'High', expected:true}
+   ]},
+  {id:'dev-ws', name:'Developer Workstation', role:'User endpoint', crit:'Medium', layer:'endpoint', owner:'Engineering Enablement', unknown:false,
+   deps:[
+     {to:'internal-portal', svc:'HTTPS', why:'Required by application', dir:'outbound', freq:'Medium', expected:true},
+     {to:'auth-service', svc:'Authentication', why:'Required by application', dir:'outbound', freq:'High', expected:true},
+     {to:'dns', svc:'DNS', why:'Required by infrastructure', dir:'outbound', freq:'High', expected:true}
+   ]},
+  {id:'office-ws', name:'Standard Office Workstation', role:'User endpoint', crit:'Low', layer:'endpoint', owner:'Digital Workplace', unknown:false,
+   deps:[
+     {to:'internal-portal', svc:'HTTPS', why:'Required by application', dir:'outbound', freq:'Medium', expected:true},
+     {to:'auth-service', svc:'Authentication', why:'Required by application', dir:'outbound', freq:'High', expected:true},
+     {to:'dns', svc:'DNS', why:'Required by infrastructure', dir:'outbound', freq:'High', expected:true}
+   ]},
+  {id:'unknown-srv', name:'Unclassified Server', role:'Infrastructure', crit:'Unknown', layer:'infra', owner:'Unassigned', unknown:true,
+   deps:[{to:'dns', svc:'DNS', why:'Not documented', dir:'outbound', freq:'Low', expected:false}]}
+];
+const WL_BY_ID = {};
+WORKLOADS.forEach(w => { WL_BY_ID[w.id] = w; });
+
+const ZONES = ['User','Presentation','Application','Database','Backup','Management','Security','Infrastructure','Development','Test','Production','Cloud','Third-party'];
+
+const SEED_POLICIES = [
+  {id:'p1', src:'trading-app', dst:'trading-db',  service:'Database',       action:'allow', just:'Required by application'},
+  {id:'p2', src:'trading-app', dst:'hr-db',       service:'Database',       action:'block', just:'Security service'},
+  {id:'p3', src:'trading-app', dst:'monitoring',  service:'Monitoring',     action:'allow', just:'Required by infrastructure'},
+  {id:'p4', src:'trading-app', dst:'unknown-srv', service:'Any',            action:'block', just:'Security service'},
+  {id:'p5', src:'trading-app', dst:'dns',         service:'DNS',            action:'allow', just:'Required by infrastructure'},
+  {id:'p6', src:'trading-app', dst:'auth-service',service:'Authentication', action:'allow', just:'Required by application'}
+];
+
+const DRIFT_ITEMS = [
+  {id:'d1', policy:'trading-app → trading-db (Database)', expected:'Application → Database', observed:'Application → Database', ok:true},
+  {id:'d2', policy:'trading-app → dns (DNS)',             expected:'Application → DNS',      observed:'Application → DNS',      ok:true},
+  {id:'d3', policy:'trading-app → legacy-batch',          expected:'(none documented)',      observed:'Application → Legacy Batch Service', ok:false, note:'Undocumented dependency. Investigate before enforcement.'},
+  {id:'d4', policy:'hr-app → hr-db (Database)',           expected:'Application → HR DB',    observed:'Application → HR DB, Application → New Reporting Service', ok:false, note:'A new service appeared since the last policy review.'},
+  {id:'d5', policy:'office-ws → md-db',                   expected:'(none)',                 observed:'Office Workstation → Market Data DB', ok:false, note:'A lateral path was introduced by a recent change.'},
+  {id:'d6', policy:'cloud-api → cloud-db (Database)',     expected:'Application → Database', observed:'Application → Database', ok:true}
+];
+
+const LIFECYCLE = [
+  {k:'CREATE',  t:'A policy is proposed from a documented, observed business or application requirement.'},
+  {k:'REVIEW',  t:'Security, network and the application owner check scope, service and justification.'},
+  {k:'APPROVE', t:'An accountable owner accepts the risk and the policy becomes deployable.'},
+  {k:'DEPLOY',  t:'The policy is pushed to enforcement points, usually after an observe-mode pass.'},
+  {k:'MONITOR', t:'Telemetry confirms the policy behaves as intended and nothing required is broken.'},
+  {k:'AUDIT',   t:'Evidence is produced: who approved what, when, why, and against which requirement.'},
+  {k:'UPDATE',  t:'Policies are amended as applications, ownership and business processes change.'},
+  {k:'RETIRE',  t:'Policies that no longer serve a purpose are removed. Unused access is still access.'}
+];
+
+const AUTO_LEVELS = [
+  {k:'MANUAL', t:'Every policy is written and reviewed by hand. Works for a pilot, collapses at enterprise scale.'},
+  {k:'SCRIPTED', t:'Scripts handle repetitive steps, but each script has its own assumptions and maintenance burden.'},
+  {k:'AUTOMATED', t:'Discovery, recommendation, validation and deployment are integrated. Humans review exceptions.'},
+  {k:'POLICY-AS-CODE', t:'Policies are versioned, tested in pipelines, peer-reviewed and auditable like software.'}
+];
+
+const ADVERSARIAL = [
+  {k:'Segment everything immediately', r:'Huge policy volume, high operational risk, unknown dependencies. Teams lose confidence after the first outage.'},
+  {k:'Let security write every rule', r:'Application knowledge becomes a bottleneck. Security cannot know every business flow, so policies become either too broad or wrong.'},
+  {k:'Block everything except what we know', r:'Any undocumented dependency becomes an outage. This is exactly why discovery and observe mode exist.'},
+  {k:'Never allow exceptions', r:'Emergency workarounds emerge outside the controlled process — usually as temporary firewall rules nobody reviews.'},
+  {k:'Never review old policies', r:'Policy drift and unnecessary access accumulate quietly. The policy set becomes an archaeology project.'},
+  {k:'Automate before discovery', r:'Automation can scale bad assumptions extremely efficiently — one of humanity\u2019s favourite ways to make mistakes faster.'}
+];
+
+const RACI_ROWS = [
+  {row:'Discovery',           v:{Security:'C', Network:'C', Endpoint:'R', Application:'I', Cloud:'C', SRE:'I', Risk:'I'}, why:'Endpoint and cloud engineering hold the telemetry sources; security defines what must be discovered.'},
+  {row:'Dependency mapping',  v:{Security:'C', Network:'C', Endpoint:'C', Application:'R', Cloud:'C', SRE:'C', Risk:'I'}, why:'Application teams know the business flows; infrastructure teams know the plumbing. Both are needed.'},
+  {row:'Policy design',       v:{Security:'R', Network:'C', Endpoint:'C', Application:'C', Cloud:'C', SRE:'C', Risk:'I'}, why:'Security owns the standard, but policy must reflect real application behaviour.'},
+  {row:'Policy approval',     v:{Security:'A', Network:'C', Endpoint:'I', Application:'C', Cloud:'C', SRE:'I', Risk:'C'}, why:'One accountable owner prevents policy sprawl. Risk and the application owner are consulted.'},
+  {row:'Deployment',          v:{Security:'C', Network:'R', Endpoint:'R', Application:'I', Cloud:'R', SRE:'C', Risk:'I'}, why:'Enforcement points live in network, endpoint and cloud platforms — deployment is an engineering activity.'},
+  {row:'Monitoring',          v:{Security:'C', Network:'C', Endpoint:'C', Application:'I', Cloud:'C', SRE:'R', Risk:'I'}, why:'Operations watches availability and behaviour continuously; security consumes the same telemetry.'},
+  {row:'Incident response',   v:{Security:'A', Network:'R', Endpoint:'R', Application:'C', Cloud:'R', SRE:'R', Risk:'I'}, why:'Security leads, but containment depends on every platform team acting in the same incident.'},
+  {row:'Exceptions',          v:{Security:'R', Network:'C', Endpoint:'I', Application:'C', Cloud:'C', SRE:'C', Risk:'A'}, why:'Risk holds accountability for accepted residual risk; security runs the process.'},
+  {row:'Auditing',            v:{Security:'R', Network:'C', Endpoint:'C', Application:'I', Cloud:'C', SRE:'I', Risk:'A'}, why:'Evidence must satisfy the regulator or auditor, so risk owns the outcome.'}
+];
+const RACI_COLS = ['Security','Network','Endpoint','Application','Cloud','SRE','Risk'];
+
+const ROADMAP = [
+  {n:'PHASE 0', t:'Business alignment', obj:'Agree what problem microsegmentation is solving and how success will be measured.',
+   inp:['Risk register','Regulatory obligations','Current architecture baseline'], act:['Identify sponsors','Agree scope and non-goals','Define success metrics','Secure funding'],
+   out:['Charter','Success metrics','Governance model'], ppl:['Security leadership','Risk','Architecture','Business owners'],
+   risk:['Programme treated as a tool purchase'], exit:'Sponsor named, scope agreed, success metrics defined and resourced.'},
+  {n:'PHASE 1', t:'Discovery', obj:'Build an accurate inventory of workloads, owners and unknowns.',
+   inp:['CMDB export','Asset scanning','Cloud inventory APIs'], act:['Scan estate','Collect telemetry','Reconcile sources','Track unknowns'],
+   out:['Workload inventory','Owner map','Unknown asset register'], ppl:['Endpoint engineering','Cloud engineering','ITSM','Security'],
+   risk:['Incomplete discovery gives false confidence'], exit:'Example exit criteria: known workloads are sufficiently inventoried, ownership is established, unknown assets are tracked.'},
+  {n:'PHASE 2', t:'Dependency mapping', obj:'Understand who talks to whom, over what, and why.',
+   inp:['Flow logs','Application documentation','Owner interviews'], act:['Analyse flows','Interview owners','Flag unexpected paths','Validate critical paths'],
+   out:['Dependency map','Unexplained flow list'], ppl:['Application teams','Network','SRE','Security'],
+   risk:['Documentation disagrees with reality'], exit:'Example exit criteria: critical application dependencies are understood, unknown flows are investigated, business owners validate critical paths.'},
+  {n:'PHASE 3', t:'Classification', obj:'Assign criticality, role and ownership to every workload.',
+   inp:['Dependency map','Business impact analysis'], act:['Classify by criticality','Classify by role','Confirm owners','Record regulatory scope'],
+   out:['Classified inventory'], ppl:['Business owners','Risk','Security','Application teams'],
+   risk:['Everything is labelled critical, so nothing is prioritised'], exit:'Example exit criteria: every in-scope workload has a criticality, a role and a named owner.'},
+  {n:'PHASE 4', t:'Policy design', obj:'Translate legitimate communication into explicit, owned policy.',
+   inp:['Classified inventory','Dependency map','Zone model'], act:['Define zones','Draft policies','Attach justification and owner','Peer review'],
+   out:['Draft policy set','Policy standards'], ppl:['Security architecture','Application teams','Network','Risk'],
+   risk:['Overly broad rules recreate the original problem'], exit:'Example exit criteria: draft policies exist for all in-scope critical paths, each with an owner and justification.'},
+  {n:'PHASE 5', t:'Observe mode', obj:'Watch real traffic without blocking anything.',
+   inp:['Draft policy set','Telemetry pipeline'], act:['Enable observe mode','Compare policy to observed flows','Identify gaps'],
+   out:['Validated policy set','Gap report'], ppl:['Security','SRE','Network','Application teams'],
+   risk:['Observe period too short to capture monthly or quarterly flows'], exit:'Example exit criteria: observed flows are consistent with the policy set across a full business cycle.'},
+  {n:'PHASE 6', t:'Pilot', obj:'Prove the model, the tooling and the operating model on a small scope.',
+   inp:['Validated policy set','Rollback procedure','Monitoring'], act:['Select pilot scope','Enforce','Monitor','Exercise rollback','Retrospective'],
+   out:['Pilot report','Updated runbooks'], ppl:['All platform teams','Application owner','SRE','Risk'],
+   risk:['Pilot chosen because it is easy rather than representative'], exit:'Example exit criteria: policies are tested, rollback works, monitoring works, operational teams understand incidents, and business owners approve progression.'},
+  {n:'PHASE 7', t:'Controlled enforcement', obj:'Enable enforcement in measured, reversible steps.',
+   inp:['Pilot report','Change management process'], act:['Enforce by application group','Monitor closely','Handle exceptions formally'],
+   out:['Enforced coverage','Operational runbooks'], ppl:['Network','Endpoint','Cloud','SRE','Security'],
+   risk:['Enforcement and an unrelated change land in the same window'], exit:'Example exit criteria: enforcement is stable across a full business cycle with no unresolved critical incidents.'},
+  {n:'PHASE 8', t:'Expansion', obj:'Extend coverage across the estate in waves.',
+   inp:['Enforced coverage','Capacity plan'], act:['Prioritise by risk','Repeat the pipeline per wave','Track operational impact'],
+   out:['Growing coverage','Updated risk view'], ppl:['Programme office','All platform teams'],
+   risk:['Wave cadence exceeds the organisation\u2019s ability to absorb change'], exit:'Example exit criteria: each wave completes with rollback proven and no sustained operational impact.'},
+  {n:'PHASE 9', t:'Automation', obj:'Reduce manual effort and increase consistency.',
+   inp:['Stable process','Understood environment'], act:['Automate discovery','Automate policy validation','Automate deployment','Introduce policy-as-code'],
+   out:['Automated pipeline','Versioned policies'], ppl:['Platform engineering','Security engineering','SRE'],
+   risk:['Automating an unvalidated assumption at speed'], exit:'Example exit criteria: policy change lead time falls while change failure rate does not increase.'},
+  {n:'PHASE 10', t:'Continuous operations', obj:'Operate microsegmentation as a permanent capability.',
+   inp:['Automated pipeline','Ownership model'], act:['Monitor drift','Run exception reviews','Audit','Improve'],
+   out:['Operational service','Continuous improvement loop'], ppl:['SRE','Security operations','Risk','Application teams'],
+   risk:['Programme attention fades and drift accumulates'], exit:'Example exit criteria: drift, exceptions and violations are reviewed on a defined cadence with named owners.'}
+];
+
+const PRINCIPLES = [
+  ['1','Visibility before enforcement.'],['2','Application context before policy creation.'],
+  ['3','Least privilege rather than “allow everything”.'],['4','Pilot before enterprise-wide enforcement.'],
+  ['5','Observe before blocking.'],['6','Every policy needs an owner and reason.'],
+  ['7','Exceptions need governance.'],['8','Policies need lifecycle management.'],
+  ['9','Rollback must exist before enforcement.'],['10','Microsegmentation is continuous operations, not a one-time project.']
+];
+
+const IDEAL_STEPS = ['BUSINESS GOALS','DISCOVER ASSETS','MAP DEPENDENCIES','CLASSIFY WORKLOADS','DEFINE SECURITY ZONES',
+  'DESIGN POLICIES','OBSERVE TRAFFIC','MODEL IMPACT','PILOT','CONTROLLED ENFORCEMENT','MONITOR','HANDLE EXCEPTIONS',
+  'DETECT POLICY DRIFT','AUTOMATE','SCALE','CONTINUOUS IMPROVEMENT ↺'];
+
+/* =========================================================
+   STATE
+   ========================================================= */
+const LS_KEY = 'msl_state_v1';
+const WELCOME_KEY = 'msl_welcomed_v1';
+const PHASE_IDS = ['why','discover','map','classify','design','pilot','enforce','operate','scale','exec'];
+const PHASE_LABELS = {why:'WHY',discover:'DISCOVER',map:'MAP',classify:'CLASSIFY',design:'DESIGN',
+  pilot:'PILOT',enforce:'ENFORCE',operate:'OPERATE',scale:'SCALE',exec:'EXECUTIVE VIEW'};
+
+function defaultState(){
+  return {
+    mode:'simple',
+    phase:'why',
+    done:{},
+    discovery:{run:false, revealed:0},
+    criticality:{},
+    role:{},
+    zone:{},
+    policies: SEED_POLICIES.map(p => Object.assign({}, p)),
+    enforcement:'observe',
+    exceptions: [
+      {id:'e1', req:'legacy-batch', just:'Nightly reconciliation during migration', days:30, stage:5, status:'active', expires:null},
+      {id:'e2', req:'vendor-support', just:'Vendor-assisted upgrade window', days:14, stage:5, status:'active', expires:null},
+      {id:'e3', req:'dev-ws', just:'Debugging a production incident', days:7, stage:2, status:'pending', expires:null},
+      {id:'e4', req:'office-ws', just:'Temporary reporting access', days:90, stage:6, status:'review', expires:null}
+    ],
+    driftResolved:{},
+    pilot:{started:false, step:-1, eventIndex:0, done:false},
+    surprise:false,
+    raciSeen:{},
+    adversarial:{},
+    autoLevel:0,
+    lifecycleSel:-1,
+    scale:{wl:1284, app:86, team:24, pol:4821, cov:48},
+    builder:{size:'3', wl:12000, cx:70, leg:65, cloud:55, reg:80, auto:40, mat:60, owner:50},
+    invFilter:'all',
+    dash:'exec',
+    scenarioResolved:{},
+    log:[]
+  };
+}
+
+let state = defaultState();
+
+function save(){
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e){ /* storage may be unavailable */ }
+}
+function load(){
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return;
+    const parsed = JSON.parse(raw);
+    if(parsed && typeof parsed === 'object'){
+      state = Object.assign(defaultState(), parsed);
+      state.scale = Object.assign(defaultState().scale, parsed.scale || {});
+      state.builder = Object.assign(defaultState().builder, parsed.builder || {});
+      if(!Array.isArray(state.policies) || !state.policies.length && parsed.policies === undefined){
+        state.policies = SEED_POLICIES.map(p => Object.assign({}, p));
+      }
+    }
+  } catch(e){ state = defaultState(); }
+}
+function pushLog(actor, change, result){
+  state.log.unshift({t:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), actor, change, result});
+  state.log = state.log.slice(0, 12);
+}
+
+/* =========================================================
+   WELCOME / FIRST-LAUNCH
+   ========================================================= */
+function showWelcome(){
+  const el = $('#welcome');
+  if(!el) return;
+  el.hidden = false;
+  document.body.style.overflow = 'hidden';
+  const btn = $('#welcomeEnter');
+  if(btn) btn.focus();
+}
+function hideWelcome(){
+  const el = $('#welcome');
+  if(!el) return;
+  el.hidden = true;
+  document.body.style.overflow = '';
+  try { localStorage.setItem(WELCOME_KEY, '1'); } catch(e){}
+}
+function initWelcome(){
+  const el = $('#welcome');
+  if(!el) return;
+  const btn = $('#welcomeEnter');
+  if(btn) btn.addEventListener('click', hideWelcome);
+
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape' && !el.hidden) hideWelcome();
+  });
+
+  /* minimal focus trap so keyboard users stay inside the dialog */
+  el.addEventListener('keydown', e => {
+    if(e.key !== 'Tab') return;
+    const f = el.querySelectorAll('a[href],button:not([disabled])');
+    if(!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  });
+
+  let seen = false;
+  try { seen = localStorage.getItem(WELCOME_KEY) === '1'; } catch(e){}
+  if(!seen) showWelcome();
+}
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+function buildChips(){
+  const host = $('#chips');
+  host.innerHTML = '';
+  PHASE_IDS.forEach((id, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('role','tab');
+    b.dataset.goto = id;
+    b.innerHTML = '<span class="num">' + String(i+1).padStart(2,'0') + '</span>' + PHASE_LABELS[id];
+    host.appendChild(b);
+  });
+}
+
+function goPhase(id){
+  if(PHASE_IDS.indexOf(id) === -1) return;
+  state.phase = id;
+  $$('.phase').forEach(s => s.classList.toggle('active', s.dataset.phase === id));
+  $$('#chips button').forEach(b => {
+    const on = b.dataset.goto === id;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  window.scrollTo({top:0, behavior: reduceMotion ? 'auto' : 'smooth'});
+  if(id === 'map') requestAnimationFrame(drawMap);
+  if(id === 'exec') renderDash();
+  save();
+}
+
+function updateProgress(){
+  const n = Object.keys(state.done).filter(k => state.done[k]).length;
+  const pct = Math.round((n / PHASE_IDS.length) * 100);
+  const bar = $('#progBar');
+  bar.querySelector('i').style.width = pct + '%';
+  bar.setAttribute('aria-valuenow', String(pct));
+  $('#progTxt').textContent = pct + '% · ' + n + ' / ' + PHASE_IDS.length + ' phases';
+  $$('#chips button').forEach(b => b.classList.toggle('done', !!state.done[b.dataset.goto]));
+}
+
+/* =========================================================
+   MODE
+   ========================================================= */
+function setMode(m){
+  state.mode = m;
+  document.body.classList.toggle('mode-pro', m === 'pro');
+  document.body.classList.toggle('mode-simple', m === 'simple');
+  $('#modeSimple').classList.toggle('on', m === 'simple');
+  $('#modePro').classList.toggle('on', m === 'pro');
+  $('#modeSimple').setAttribute('aria-pressed', m === 'simple' ? 'true' : 'false');
+  $('#modePro').setAttribute('aria-pressed', m === 'pro' ? 'true' : 'false');
+  save();
+}
+
+/* =========================================================
+   CHAPTER 1 · WHY DIAGRAM
+   ========================================================= */
+const WHY_EDGES = ['user-app','app-db','app-dns','app-auth','app-mon','app-bkp','db-bkp'];
+const WHY_TARGETS = ['app','db','dns','auth','mon','bkp'];
+
+function whyReset(){
+  WHY_EDGES.forEach(e => {
+    const el = document.getElementById('e-' + e);
+    el.classList.remove('live','blocked','ok');
+  });
+  WHY_TARGETS.forEach(t => {
+    const n = document.getElementById('n-' + t);
+    if(n) n.classList.remove('compromised','protected');
+  });
+  const t = document.getElementById('t-app');
+  if(t) t.textContent = 'APP SERVER';
+  const tb = document.getElementById('t-db');
+  if(tb) tb.textContent = 'DATABASE';
+  $('#whyReach').textContent = '7';
+  $('#whyBlast').textContent = 'Broad';
+  $('#whyBlast').className = 'v red';
+  $('#whyMode').textContent = 'Not configured';
+  $('#whyMode').className = 'v';
+  $('#whyStatus').textContent = 'Status: all internal communication broadly permitted.';
+  $('#whyStatus').setAttribute('fill','#8d9aad');
+}
+
+function whyCompromise(){
+  whyReset();
+  const app = document.getElementById('n-app');
+  app.classList.add('compromised');
+  document.getElementById('t-app').textContent = 'APP — COMPROMISED';
+  const db = document.getElementById('n-db');
+  db.classList.add('compromised');
+  document.getElementById('t-db').textContent = 'DATABASE — REACHED';
+  ['app-db','app-dns','app-auth','app-mon','app-bkp','db-bkp'].forEach(e => {
+    document.getElementById('e-' + e).classList.add('live');
+  });
+  ['dns','auth','mon','bkp'].forEach(t => {
+    const n = document.getElementById('n-' + t);
+    if(n) n.classList.add('compromised');
+  });
+  $('#whyReach').textContent = '6';
+  $('#whyBlast').textContent = 'Broad';
+  $('#whyBlast').className = 'v red';
+  $('#whyMode').textContent = 'Not configured';
+  $('#whyMode').className = 'v red';
+  $('#whyStatus').textContent = 'Status: one compromised workload can reach other systems because communication is broadly permitted.';
+  $('#whyStatus').setAttribute('fill','#e2554f');
+  state.done.discover = state.done.discover;
+}
+
+function whySegment(){
+  whyReset();
+  ['user-app','app-db','app-dns','app-auth','app-mon'].forEach(e => {
+    document.getElementById('e-' + e).classList.add('ok');
+  });
+  document.getElementById('e-app-bkp').classList.add('blocked');
+  document.getElementById('e-db-bkp').classList.add('blocked');
+  const app = document.getElementById('n-app');
+  app.classList.add('protected');
+  ['db','dns','auth','mon'].forEach(t => {
+    const n = document.getElementById('n-' + t);
+    if(n) n.classList.add('protected');
+  });
+  $('#whyReach').textContent = '4';
+  $('#whyBlast').textContent = 'Reduced';
+  $('#whyBlast').className = 'v green';
+  $('#whyMode').textContent = 'Microsegmented';
+  $('#whyMode').className = 'v green';
+  $('#whyStatus').textContent = 'Status: only required communication is permitted. Other paths are blocked.';
+  $('#whyStatus').setAttribute('fill','#31c07a');
+  state.done.why = true;
+  updateProgress();
+  save();
+}
+
+/* =========================================================
+   CHAPTER 2 · DISCOVERY
+   ========================================================= */
+function renderInventory(){
+  const body = $('#invBody');
+  const f = state.invFilter;
+  const rows = WORKLOADS.filter(w => {
+    if(f === 'all') return true;
+    if(f === 'unknown') return w.unknown;
+    if(f === 'Infrastructure') return w.role === 'Infrastructure' || w.role === 'Management' || w.role === 'Security' || w.role === 'Backup';
+    return w.role === f;
+  });
+  body.innerHTML = rows.map(w => {
+    const st = w.unknown ? '<span class="pill a">UNKNOWN OWNER</span>' : '<span class="pill g">KNOWN</span>';
+    return '<tr><td><button class="btn small ghost" style="border:0;padding:2px 4px;text-align:left" data-wlinfo="' + w.id + '">' +
+      esc(w.name) + '</button></td><td>' + esc(w.role) + '</td><td class="muted small">' + esc(w.owner) +
+      '</td><td>' + st + '</td></tr>';
+  }).join('');
+}
+
+function animateCount(el, target, duration){
+  const start = 0;
+  const t0 = performance.now();
+  const dur = reduceMotion ? 1 : (duration || 900);
+  function frame(t){
+    const p = clamp((t - t0) / dur, 0, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmt(Math.round(start + (target - start) * eased));
+    if(p < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+function runDiscovery(){
+  const steps = $$('#discSteps .step');
+  const log = $('#discLog');
+  steps.forEach(s => s.classList.remove('on','done'));
+  log.innerHTML = '<p class="small muted">Discovery starting…</p>';
+  state.discovery.run = true;
+  let i = 0;
+
+  const messages = [
+    'Scanning inventory sources — CMDB, cloud APIs, hypervisor inventory.',
+    'Collecting telemetry — flow records from network and host agents.',
+    'Identifying workloads — correlating addresses with identities and owners.',
+    'Observing connections — building an evidence base of who talks to whom.',
+    'Building dependency map — linking observed flows to applications.',
+    'Finding unknown assets — flagging workloads with no confirmed owner.'
+  ];
+
+  function next(){
+    if(i >= steps.length){
+      log.innerHTML += '<div class="note good"><p><strong>Discovery pass complete.</strong> 1,284 workloads observed in the fictional estate. 147 remain unknown — these are tracked, not ignored.</p></div>';
+      state.done.discover = true;
+      updateProgress();
+      save();
+      return;
+    }
+    steps.forEach((s, idx) => {
+      s.classList.toggle('on', idx === i);
+      if(idx < i) s.classList.add('done');
+    });
+    log.innerHTML = '<p class="small"><span class="pill b">' + (i+1) + '/' + steps.length + '</span> ' + esc(messages[i]) + '</p>' + log.innerHTML;
+    i++;
+    setTimeout(next, reduceMotion ? 40 : 620);
+  }
+  $$('.metric .v[data-count]').forEach(el => {
+    animateCount(el, parseInt(el.dataset.count, 10), 1100);
+  });
+  next();
+}
+
+/* =========================================================
+   CHAPTER 3 · DEPENDENCY MAP
+   ========================================================= */
+const MAP_LAYERS = [
+  {key:'endpoint', label:'User endpoints'},
+  {key:'app', label:'Applications'},
+  {key:'data', label:'Data'},
+  {key:'infra', label:'Infrastructure / Cloud'}
+];
+
+function nodeClass(w){
+  const c = (state.criticality[w.id] || w.crit || '').toLowerCase();
+  if(c === 'critical') return 'crit';
+  if(c === 'high') return 'high';
+  if(c === 'medium') return 'med';
+  if(c === 'low') return 'low';
+  return 'unknown';
+}
+
+function renderMap(){
+  const grid = $('#mapGrid');
+  grid.innerHTML = '';
+  MAP_LAYERS.forEach(L => {
+    const col = document.createElement('div');
+    col.className = 'maplayer';
+    col.innerHTML = '<h5>' + esc(L.label) + '</h5>';
+    WORKLOADS.filter(w => w.layer === L.key && w.id !== 'legacy-batch').forEach(w => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'node ' + nodeClass(w);
+      b.id = 'node-' + w.id;
+      b.dataset.node = w.id;
+      b.innerHTML = esc(w.name) + '<span class="nrole">' + esc(w.role) + '</span>';
+      col.appendChild(b);
+    });
+    if(L.key === 'app'){
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'node unknown hidden';
+      b.id = 'node-legacy-batch';
+      b.dataset.node = 'legacy-batch';
+      b.innerHTML = 'Legacy Batch Service<span class="nrole">Undocumented</span>';
+      col.appendChild(b);
+    }
+    grid.appendChild(col);
+  });
+  requestAnimationFrame(drawMap);
+}
+
+function drawMap(){
+  const svg = $('#mapSvg');
+  const stage = svg.parentElement;
+  const sb = stage.getBoundingClientRect();
+  svg.setAttribute('viewBox', '0 0 ' + sb.width + ' ' + sb.height);
+  svg.setAttribute('width', sb.width);
+  svg.setAttribute('height', sb.height);
+
+  const parts = [];
+  WORKLOADS.forEach(w => {
+    const a = document.getElementById('node-' + w.id);
+    if(!a || a.classList.contains('hidden')) return;
+    w.deps.forEach(d => {
+      const b = document.getElementById('node-' + d.to);
+      if(!b || b.classList.contains('hidden')) return;
+      const ra = a.getBoundingClientRect();
+      const rb = b.getBoundingClientRect();
+      const x1 = ra.left + ra.width/2 - sb.left;
+      const y1 = ra.top + ra.height/2 - sb.top;
+      const x2 = rb.left + rb.width/2 - sb.left;
+      const y2 = rb.top + rb.height/2 - sb.top;
+      const dx = Math.max(40, Math.abs(x2 - x1) * 0.4);
+      const path = 'M' + x1 + ' ' + y1 + ' C' + (x1+dx) + ' ' + y1 + ', ' + (x2-dx) + ' ' + y2 + ', ' + x2 + ' ' + y2;
+      const st = edgeState(w.id, d.to);
+      let cls = 'wedge';
+      let color = '#2c3644';
+      if(!d.expected){ color = '#e2a33c'; cls += ' live'; }
+      else { color = '#2f5c47'; }
+      if(state.enforcement === 'enforce' && (st === 'blocked' || st === 'unclassified')){ color = '#e2554f'; cls += ' live'; }
+      parts.push('<path class="' + cls + '" d="' + path + '" stroke="' + color + '"/>');
+    });
+  });
+  svg.innerHTML = parts.join('');
+}
+
+function edgeState(from, to){
+  const blocked = state.policies.find(p => p.action === 'block' && (p.src === from || p.src === 'ANY') && (p.dst === to || p.dst === 'ANY'));
+  if(blocked) return 'blocked';
+  const allowed = state.policies.find(p => p.action === 'allow' && (p.src === from || p.src === 'ANY') && (p.dst === to || p.dst === 'ANY'));
+  if(allowed) return 'allowed';
+  return 'unclassified';
+}
+
+function showNode(id){
+  const w = WL_BY_ID[id];
+  if(!w) return;
+  $$('.node').forEach(n => n.classList.toggle('sel', n.dataset.node === id));
+  $('#mapDetailTitle').textContent = w.name;
+  $('#mapDetailHint').textContent = w.role + ' · Owner: ' + w.owner + ' · Criticality: ' + (state.criticality[id] || w.crit);
+
+  const rows = w.deps.map(d => {
+    const t = WL_BY_ID[d.to];
+    const st = edgeState(id, d.to);
+    let badge = '<span class="pill b">OBSERVED</span>';
+    if(!d.expected) badge = '<span class="pill a">UNEXPECTED</span>';
+    if(state.enforcement === 'enforce' && st !== 'allowed') badge = '<span class="pill r">BLOCKED</span>';
+    if(state.enforcement === 'enforce' && st === 'allowed') badge = '<span class="pill g">ALLOWED</span>';
+    return '<tr><td>' + esc(t ? t.name : d.to) + '</td><td>' + esc(d.svc) + '</td><td class="muted small">' + esc(d.why) +
+      '</td><td class="small">' + esc(d.dir) + '</td><td class="small">' + esc(d.freq) + '</td><td>' + badge + '</td></tr>';
+  }).join('');
+
+  $('#mapDetail').innerHTML =
+    '<div class="tblwrap"><table><thead><tr><th>Talks to</th><th>Service</th><th>Why</th><th>Direction</th><th>Frequency</th><th>Status</th></tr></thead><tbody>' +
+    rows + '</tbody></table></div>';
+}
+
+function revealSurprise(){
+  state.surprise = true;
+  const n = document.getElementById('node-legacy-batch');
+  if(n) n.classList.remove('hidden');
+  const card = $('#surpriseCard');
+  card.hidden = false;
+  requestAnimationFrame(drawMap);
+  card.scrollIntoView({behavior: reduceMotion ? 'auto' : 'smooth', block:'center'});
+  state.done.map = true;
+  updateProgress();
+  save();
+}
+
+/* =========================================================
+   BOARDS (classify / zones)
+   ========================================================= */
+function boardMount(host, opts){
+  const key = opts.key;
+  const columns = opts.columns;
+  let selected = null;
+
+  function poolItems(){
+    return WORKLOADS.filter(w => !state[key][w.id]);
+  }
+
+  function render(){
+    host.innerHTML = '';
+    const poolWrap = document.createElement('div');
+    poolWrap.className = 'pool';
+    poolWrap.setAttribute('aria-label', 'Unassigned workloads');
+    const pool = poolItems();
+    if(!pool.length){
+      poolWrap.innerHTML = '<span class="small muted">All workloads assigned.</span>';
+    } else {
+      pool.forEach(w => poolWrap.appendChild(chip(w, false)));
+    }
+
+    poolWrap.addEventListener('dragover', e => { e.preventDefault(); poolWrap.classList.add('over'); });
+    poolWrap.addEventListener('dragleave', () => poolWrap.classList.remove('over'));
+    poolWrap.addEventListener('drop', e => {
+      e.preventDefault(); poolWrap.classList.remove('over');
+      const id = e.dataTransfer.getData('text/plain');
+      if(id && state[key][id]){ delete state[key][id]; render(); onChange(); }
+    });
+    host.appendChild(poolWrap);
+
+    const cols = document.createElement('div');
+    cols.className = 'cols';
+    columns.forEach(c => {
+      const box = document.createElement('div');
+      box.className = 'colbox';
+      const items = WORKLOADS.filter(w => state[key][w.id] === c);
+      box.innerHTML = '<h5><span>' + esc(c) + '</span><span>' + items.length + '</span></h5>';
+      const itemsWrap = document.createElement('div');
+      itemsWrap.className = 'items';
+      items.forEach(w => itemsWrap.appendChild(chip(w, true)));
+      if(!items.length) itemsWrap.innerHTML = '<span class="tiny dim">empty</span>';
+      box.appendChild(itemsWrap);
+      box.tabIndex = 0;
+      box.setAttribute('role','button');
+      box.setAttribute('aria-label', 'Assign selected workload to ' + c);
+      box.addEventListener('dragover', e => { e.preventDefault(); box.classList.add('over'); });
+      box.addEventListener('dragleave', () => box.classList.remove('over'));
+      box.addEventListener('drop', e => {
+        e.preventDefault(); box.classList.remove('over');
+        const id = e.dataTransfer.getData('text/plain');
+        if(id){ state[key][id] = c; render(); onChange(); }
+      });
+      box.addEventListener('click', () => {
+        if(selected){ state[key][selected] = c; selected = null; render(); onChange(); }
+      });
+      box.addEventListener('keydown', e => {
+        if((e.key === 'Enter' || e.key === ' ') && selected){
+          e.preventDefault(); state[key][selected] = c; selected = null; render(); onChange();
+        }
+      });
+      cols.appendChild(box);
+    });
+    host.appendChild(cols);
+  }
+
+  function chip(w, placed){
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip' + (selected === w.id ? ' sel' : '');
+    b.textContent = w.name;
+    b.draggable = true;
+    b.setAttribute('aria-pressed', selected === w.id ? 'true' : 'false');
+    b.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', w.id));
+    b.addEventListener('click', e => {
+      e.stopPropagation();
+      if(placed){ delete state[key][w.id]; selected = null; render(); onChange(); return; }
+      selected = (selected === w.id) ? null : w.id;
+      render();
+    });
+    return b;
+  }
+
+  function onChange(){
+    if(opts.after) opts.after();
+    save();
+  }
+
+  render();
+  return {render};
+}
+
+let boards = {};
+
+/* =========================================================
+   POLICY BUILDER
+   ========================================================= */
+function fillPolicySelects(){
+  const src = $('#pbSrc'), dst = $('#pbDst'), svc = $('#pbSvc');
+  src.innerHTML = '<option value="ANY">ANY (all sources)</option>' +
+    WORKLOADS.map(w => '<option value="' + w.id + '">' + esc(w.name) + '</option>').join('');
+  dst.innerHTML = '<option value="ANY">ANY (all destinations)</option>' +
+    WORKLOADS.map(w => '<option value="' + w.id + '">' + esc(w.name) + '</option>').join('');
+  svc.innerHTML = SERVICES.map(s => '<option>' + esc(s) + '</option>').join('');
+  src.value = 'trading-app';
+  dst.value = 'trading-db';
+  svc.value = 'Database';
+}
+
+function policyQuality(p){
+  const problems = [];
+  let level = 'good';
+
+  if(p.action === 'block' || p.action === 'log'){
+    return {level:'good', msg:'This rule does not widen access. Blocking and log-only rules generally reduce exposure — verify that legitimate dependencies remain allowed.'};
+  }
+
+  if(p.dst === 'ANY' || p.src === 'ANY'){
+    level = 'bad';
+    problems.push('TOO BROAD — this rule allows more communication than necessary.');
+  }
+  if(p.service === 'Any' && p.dst !== 'ANY'){
+    level = level === 'bad' ? 'bad' : 'warn';
+    problems.push('Service is set to "Any". Prefer a specific service where the dependency is understood.');
+  }
+
+  if(p.src !== 'ANY'){
+    const w = WL_BY_ID[p.src];
+    if(w){
+      const required = w.deps.filter(d => d.expected).map(d => d.to);
+      const covered = state.policies.filter(x => x.action === 'allow' && x.src === p.src).map(x => x.dst);
+      if(covered.indexOf(p.dst) === -1) covered.push(p.dst);
+      const missing = required.filter(r => covered.indexOf(r) === -1);
+      if(missing.length && level !== 'bad'){
+        level = 'warn';
+        problems.push('TOO NARROW — required dependencies may be blocked: ' + missing.map(m => (WL_BY_ID[m] ? WL_BY_ID[m].name : m)).join(', ') + '.');
+      }
+    }
+  }
+
+  if(p.just === 'Temporary exception'){
+    if(level === 'good') level = 'warn';
+    problems.push('Temporary exceptions need an expiry date, an owner and a review — otherwise they become permanent architecture.');
+  }
+
+  if(!problems.length){
+    return {level:'good', msg:'Specific source, specific destination, justified service. This is the shape of a good policy — subject to application-owner validation.'};
+  }
+  return {level: level, msg: problems.join(' ')};
+}
+
+function renderPolicies(){
+  const body = $('#polBody');
+  if(!state.policies.length){
+    body.innerHTML = '<tr><td colspan="8" class="muted small">No policies defined. Add one above, or restore the example set.</td></tr>';
+    return;
+  }
+  body.innerHTML = state.policies.map((p, i) => {
+    const q = policyQuality(p);
+    const cls = q.level === 'good' ? 'g' : (q.level === 'warn' ? 'a' : 'r');
+    const label = q.level === 'good' ? 'GOOD' : (q.level === 'warn' ? 'REVIEW' : 'TOO BROAD');
+    const srcN = p.src === 'ANY' ? 'ANY' : (WL_BY_ID[p.src] ? WL_BY_ID[p.src].name : p.src);
+    const dstN = p.dst === 'ANY' ? 'ANY' : (WL_BY_ID[p.dst] ? WL_BY_ID[p.dst].name : p.dst);
+    const actCls = p.action === 'allow' ? 'g' : (p.action === 'block' ? 'r' : 'b');
+    return '<tr><td>' + (i+1) + '</td><td>' + esc(srcN) + '</td><td>' + esc(dstN) + '</td><td>' + esc(p.service) +
+      '</td><td><span class="pill ' + actCls + '">' + p.action.toUpperCase() + '</span></td><td class="small muted">' + esc(p.just) +
+      '</td><td><span class="pill ' + cls + '">' + label + '</span></td>' +
+      '<td><button class="btn small ghost" data-delpol="' + p.id + '" aria-label="Delete policy ' + (i+1) + '">✕</button></td></tr>';
+  }).join('');
+}
+
+function addPolicy(){
+  const p = {
+    id: 'u' + Date.now(),
+    src: $('#pbSrc').value,
+    dst: $('#pbDst').value,
+    service: $('#pbSvc').value,
+    action: $('#pbAct').value,
+    just: $('#pbJust').value
+  };
+  state.policies.push(p);
+  const q = policyQuality(p);
+  const cls = q.level === 'good' ? 'good' : (q.level === 'warn' ? 'warn' : 'bad');
+  const label = q.level === 'good' ? 'GOOD POLICY' : (q.level === 'warn' ? 'REVIEW RECOMMENDED' : 'WARNING');
+  $('#pbResult').innerHTML = '<div class="note ' + cls + '"><p><strong>' + label + '</strong></p><p class="small">' + esc(q.msg) + '</p></div>';
+  renderPolicies();
+  pushLog('you', 'Added policy ' + p.src + ' → ' + p.dst, label);
+  save();
+}
+
+/* =========================================================
+   ENFORCEMENT SIMULATION
+   ========================================================= */
+function computeFlows(){
+  let allowed = 0, blocked = 0, unknown = 0, requiredBlocked = 0;
+  const details = [];
+  WORKLOADS.forEach(w => {
+    w.deps.forEach(d => {
+      const st = edgeState(w.id, d.to);
+      const isUnknown = !d.expected;
+      let outcome;
+      if(state.enforcement === 'observe'){ outcome = 'observed'; allowed++; }
+      else if(state.enforcement === 'simulate'){
+        if(isUnknown){ outcome = 'investigate'; unknown++; }
+        else if(st === 'allowed'){ outcome = 'allowed'; allowed++; }
+        else { outcome = 'would-block'; blocked++; }
+      } else {
+        if(isUnknown){ outcome = 'investigate'; unknown++; }
+        else if(st === 'allowed'){ outcome = 'allowed'; allowed++; }
+        else { outcome = 'blocked'; blocked++; requiredBlocked++; }
+      }
+      details.push({from:w.id, to:d.to, st:st, outcome:outcome, expected:d.expected, svc:d.svc});
+    });
+  });
+  return {allowed, blocked, unknown, requiredBlocked, details};
+}
+
+function renderEnforcement(){
+  const f = computeFlows();
+  const total = f.allowed + f.blocked + f.unknown || 1;
+  const pg = Math.round(f.allowed / total * 100);
+  const pa = Math.round(f.unknown / total * 100);
+  const pr = Math.max(0, 100 - pg - pa);
+
+  $('#enfAllowed').textContent = fmt(f.allowed);
+  $('#enfBlocked').textContent = fmt(f.blocked);
+  $('#enfUnknown').textContent = fmt(f.unknown);
+
+  const ops = $('#enfOps');
+  if(state.enforcement === 'enforce' && f.requiredBlocked > 0){
+    ops.textContent = 'ELEVATED';
+    ops.className = 'v red';
+  } else if(state.enforcement === 'simulate'){
+    ops.textContent = 'PREDICTED';
+    ops.className = 'v amber';
+  } else if(state.enforcement === 'enforce'){
+    ops.textContent = 'LOW';
+    ops.className = 'v green';
+  } else {
+    ops.textContent = 'NONE';
+    ops.className = 'v';
+  }
+
+  $('#barG').style.width = pg + '%';
+  $('#barA').style.width = pa + '%';
+  $('#barR').style.width = pr + '%';
+  $('#barG').textContent = pg > 12 ? 'Allowed ' + pg + '%' : '';
+  $('#barA').textContent = pa > 12 ? 'Investigate ' + pa + '%' : '';
+  $('#barR').textContent = pr > 12 ? 'Blocked ' + pr + '%' : '';
+
+  ['observe','simulate','enforce'].forEach(m => {
+    const el = $('#st' + m.charAt(0).toUpperCase() + m.slice(1));
+    el.classList.toggle('on', state.enforcement === m);
+    el.classList.toggle('done', (m === 'observe' && state.enforcement !== 'observe') ||
+      (m === 'simulate' && state.enforcement === 'enforce'));
+  });
+
+  let msg = '';
+  if(state.enforcement === 'observe'){
+    msg = '<div class="note"><p><strong>OBSERVE MODE</strong> — all traffic is recorded, nothing is blocked. This is where you validate that your policy set matches reality.</p></div>';
+  } else if(state.enforcement === 'simulate'){
+    msg = '<div class="note warn"><p><strong>SIMULATE MODE</strong> — ' + fmt(f.blocked) + ' connections would be blocked by the current policy set, and ' + fmt(f.unknown) + ' flows require investigation. Nothing has actually been blocked.</p></div>';
+  } else {
+    msg = '<div class="note ' + (f.requiredBlocked > 0 ? 'bad' : 'good') + '"><p><strong>ENFORCE MODE</strong> — ' + fmt(f.blocked) + ' unauthorised connections are now being denied.</p>' +
+      (f.requiredBlocked > 0 ? '<p class="small">⚠ ' + f.requiredBlocked + ' required (documented) dependency flows are being blocked. These are operational risks — review the policy set before proceeding.</p>' : '<p class="small">No documented dependency is currently blocked in this model.</p>') + '</div>';
+  }
+  $('#enfOut').innerHTML = msg;
+  requestAnimationFrame(drawMap);
+  save();
+}
+
+function setEnforcement(m){
+  state.enforcement = m;
+  $$('input[name="enf"]').forEach(r => { r.checked = (r.value === m); });
+  if(m === 'enforce'){ state.done.enforce = true; updateProgress(); }
+  renderEnforcement();
+}
+
+function emergencyRollback(){
+  if(state.enforcement === 'observe'){ toast('Already in observe mode — nothing to roll back.'); return; }
+  const seq = ['STOP ENFORCEMENT','RESTORE PREVIOUS POLICY','VERIFY CONNECTIVITY','INVESTIGATE','CORRECT POLICY','RETEST'];
+  const out = $('#rollbackOut');
+  out.innerHTML = '<div class="steps" id="rbSteps">' + seq.map((s,i) =>
+    '<span class="step" data-r="' + i + '">' + s + '</span>' + (i < seq.length-1 ? '<span class="arrow">↓</span>' : '')).join('') + '</div>';
+  state.enforcement = 'observe';
+  $$('input[name="enf"]').forEach(r => { r.checked = (r.value === 'observe'); });
+  let i = 0;
+  (function step(){
+    const els = $$('#rbSteps .step');
+    els.forEach((el, idx) => { el.classList.toggle('on', idx === i); if(idx < i) el.classList.add('done'); });
+    i++;
+    if(i <= seq.length) setTimeout(step, reduceMotion ? 30 : 480);
+    else {
+      out.innerHTML += '<div class="note good"><p><strong>Rollback complete.</strong> Enforcement is off, connectivity is verified, and the policy set needs correction before retesting.</p></div>';
+      renderEnforcement();
+      pushLog('you','Emergency rollback','Enforcement stopped, previous policy restored');
+      save();
+    }
+  })();
+}
+
+/* =========================================================
+   FAILURE SCENARIOS
+   ========================================================= */
+const SCENARIOS = [
+  {id:'s1', t:'Hidden dependency', d:'An application requires a service nobody documented. Traffic to it is now blocked in enforce mode.',
+   opts:[
+     {l:'Create a narrow exception and investigate', fb:'Correct. Time-limited, scoped, and with an owner. The dependency gets investigated and either formalised or removed.', good:true},
+     {l:'Allow the source to ANY', fb:'A broad allow recreates the original problem — and it will never be reviewed again because nobody knows what it is for.', good:false},
+     {l:'Ignore it', fb:'The application may break at an unpredictable time, usually the worst one.', good:false}
+   ]},
+  {id:'s2', t:'Legacy system', d:'An old application uses unusual, chatty communication patterns with many short-lived connections.',
+   opts:[
+     {l:'Document actual behaviour, then model policy around it', fb:'Correct. Legacy systems are exactly why observe mode exists. Model reality, then constrain it carefully.', good:true},
+     {l:'Force it into the standard policy template', fb:'Templates are useful, but forcing an incompatible legacy system typically produces an outage followed by a broad exception.', good:false}
+   ]},
+  {id:'s3', t:'Emergency access', d:'Operations requires temporary access during a critical incident at 02:00.',
+   opts:[
+     {l:'Use the pre-agreed emergency access procedure with post-hoc review', fb:'Correct. Emergency access must be possible — and must be reviewed afterwards. If it does not exist, workarounds will appear instead.', good:true},
+     {l:'Tell them to wait until morning', fb:'If legitimate emergency access is impossible, people will find a path around the control. That is how shadow access is born.', good:false}
+   ]},
+  {id:'s4', t:'Monitoring failure', d:'A monitoring system becomes unreachable after a policy change, and telemetry stops arriving.',
+   opts:[
+     {l:'Roll back the change, restore telemetry, then re-approach with a corrected policy', fb:'Correct. Visibility loss is an incident — you cannot operate a segmented environment blind.', good:true},
+     {l:'Continue; monitoring is not critical path', fb:'Without telemetry you cannot detect drift, violations or the next failure. Visibility is part of the control.', good:false}
+   ]},
+  {id:'s5', t:'Policy too broad', d:'A policy was written as Application → ANY because nobody had time to identify the destination.',
+   opts:[
+     {l:'Replace it with specific policies derived from observed flows', fb:'Correct. Broad rules are technical debt with a security cost.', good:true},
+     {l:'Leave it; it works', fb:'It works exactly as well as no segmentation at all for that source.', good:false}
+   ]},
+  {id:'s6', t:'Business change', d:'An application moves to a new server as part of a planned migration.',
+   opts:[
+     {l:'Run dependency review and policy impact analysis before the move', fb:'Correct. Change management and segmentation must be linked, not parallel.', good:true},
+     {l:'Update the policy after the move', fb:'The window between the move and the update is exactly when the outage happens.', good:false}
+   ]},
+  {id:'s7', t:'Cloud migration', d:'A workload moves from an on-premises data centre to a cloud environment.',
+   opts:[
+     {l:'Re-validate identity, enforcement point and policy translation for the cloud platform', fb:'Correct. On-premises and cloud enforcement models differ. Policy intent transfers; implementation usually does not.', good:true},
+     {l:'Assume the existing policy applies unchanged', fb:'Enforcement points, identity models and network semantics differ. Assumptions here produce silent gaps.', good:false}
+   ]}
+];
+
+function renderScenarioButtons(){
+  $('#scenarioBtns').innerHTML = SCENARIOS.map(s =>
+    '<button class="btn small" data-scn="' + s.id + '" type="button">' + esc(s.t) + '</button>').join('');
+}
+
+function showScenario(id){
+  const s = SCENARIOS.find(x => x.id === id);
+  if(!s) return;
+  const out = $('#scenarioOut');
+  out.innerHTML = '<div class="card tight"><h4 style="margin-top:0">' + esc(s.t) + '</h4><p class="small">' + esc(s.d) + '</p>' +
+    '<div class="row">' + s.opts.map((o,i) => '<button class="btn small" data-scnopt="' + id + '|' + i + '" type="button">' + esc(o.l) + '</button>').join('') + '</div></div>';
+  out.scrollIntoView({behavior: reduceMotion ? 'auto' : 'smooth', block:'nearest'});
+}
+
+function answerScenario(id, idx){
+  const s = SCENARIOS.find(x => x.id === id);
+  const o = s.opts[idx];
+  const out = $('#scenarioOut');
+  out.innerHTML = '<div class="card tight"><h4 style="margin-top:0">' + esc(s.t) + '</h4>' +
+    '<div class="note ' + (o.good ? 'good' : 'bad') + '"><p><strong>' + (o.good ? 'Good response' : 'Risky response') + '</strong></p><p class="small">' + esc(o.fb) + '</p></div>' +
+    '<button class="btn small" data-scn="' + s.id + '" type="button">Replay scenario</button></div>';
+  state.scenarioResolved[id] = o.good;
+  pushLog('you','Scenario: ' + s.t, o.good ? 'Good response' : 'Risky response');
+  save();
+}
+
+/* =========================================================
+   EXCEPTIONS
+   ========================================================= */
+const EX_STAGES = ['REQUEST','BUSINESS JUSTIFICATION','SECURITY REVIEW','RISK REVIEW','APPROVAL','TIME-LIMITED EXCEPTION','REVIEW','REMOVE OR RENEW'];
+
+function renderExceptions(){
+  const host = $('#exList');
+  if(!state.exceptions.length){
+    host.innerHTML = '<p class="small muted">No exceptions recorded.</p>';
+    return;
+  }
+  host.innerHTML = state.exceptions.map(e => {
+    const stageIdx = clamp(e.stage, 0, EX_STAGES.length - 1);
+    const chain = EX_STAGES.map((s,i) => '<span class="step' + (i < stageIdx ? ' done' : (i === stageIdx ? ' on' : '')) + '">' + esc(s) + '</span>').join('<span class="arrow">↓</span>');
+    const statusPill = e.status === 'active' ? '<span class="pill a">ACTIVE</span>' :
+      (e.status === 'pending' ? '<span class="pill b">PENDING</span>' : '<span class="pill">REVIEW</span>');
+    return '<div class="card tight" style="margin:10px 0">' +
+      '<div class="spread"><div><strong>' + esc(e.req) + '</strong> ' + statusPill + '</div>' +
+      '<div class="tiny dim">' + (e.expires ? 'Expires ' + esc(e.expires) : 'No expiry set') + '</div></div>' +
+      '<p class="small muted" style="margin:6px 0">' + esc(e.just) + ' · requested for ' + e.days + ' day(s)</p>' +
+      '<div class="steps small" style="margin:6px 0">' + chain + '</div>' +
+      '<div class="row">' +
+        (e.stage < 5 ? '<button class="btn small" data-exadv="' + e.id + '" type="button">Advance stage</button>' : '') +
+        (e.status === 'active' ? '<button class="btn small ghost" data-exrenew="' + e.id + '" type="button">Renew</button>' : '') +
+        '<button class="btn small ghost" data-exrm="' + e.id + '" type="button">Remove</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function exceptionSubmit(){
+  const req = ($('#exReq').value || 'unassigned').slice(0, 60);
+  const just = ($('#exJust').value || 'not provided').slice(0, 120);
+  const days = clamp(parseInt($('#exDays').value, 10) || 30, 1, 365);
+  state.exceptions.unshift({id:'e' + Date.now(), req, just, days, stage:0, status:'pending', expires:null});
+  renderExceptions();
+  toast('Exception request submitted — awaiting security review.');
+  save();
+}
+
+function exceptionAdvance(id){
+  const e = state.exceptions.find(x => x.id === id);
+  if(!e) return;
+  e.stage = clamp(e.stage + 1, 0, EX_STAGES.length - 1);
+  if(e.stage === 5){
+    e.status = 'active';
+    const d = new Date();
+    d.setDate(d.getDate() + e.days);
+    e.expires = d.toISOString().slice(0,10);
+    toast('Exception approved with expiry ' + e.expires);
+  } else if(e.stage >= 6){
+    e.status = 'review';
+  } else {
+    e.status = 'pending';
+  }
+  renderExceptions();
+  pushLog('workflow','Exception ' + e.req, EX_STAGES[e.stage]);
+  save();
+}
+
+function exceptionRemove(id){
+  state.exceptions = state.exceptions.filter(x => x.id !== id);
+  renderExceptions();
+  toast('Exception removed.');
+  pushLog('you','Exception removed', id);
+  save();
+}
+
+function exceptionRenew(id){
+  const e = state.exceptions.find(x => x.id === id);
+  if(!e) return;
+  const d = new Date();
+  d.setDate(d.getDate() + e.days);
+  e.expires = d.toISOString().slice(0,10);
+  renderExceptions();
+  toast('Exception renewed until ' + e.expires + '. Renewals should be justified, not automatic.');
+  save();
+}
+
+/* =========================================================
+   OPS / DRIFT / LIFECYCLE
+   ========================================================= */
+function renderOps(){
+  const unresolvedDrift = DRIFT_ITEMS.filter(d => !d.ok && !state.driftResolved[d.id]).length;
+  const activeExc = state.exceptions.filter(e => e.status === 'active' || e.status === 'review').length;
+  const vals = [
+    {k:'Active workloads', v:1284, n:'Under segmentation management', c:'blue'},
+    {k:'Active policies', v:state.policies.length * 803 + 100, n:'Fictional enterprise scale', c:''},
+    {k:'Blocked connections', v:2341 + (state.enforcement === 'enforce' ? 1800 : 0), n:'Denied by policy today', c:'red'},
+    {k:'Policy violations', v:17 + Object.keys(state.scenarioResolved).length, n:'Unauthorised attempts', c:'amber'},
+    {k:'Unknown flows', v:38 + unresolvedDrift * 4, n:'Requiring investigation', c:'amber'},
+    {k:'Expiring exceptions', v:6 + activeExc, n:'Within the next 30 days', c:'purple'}
+  ];
+  $('#opsMetrics').innerHTML = vals.map(v =>
+    '<div class="metric"><div class="k">' + esc(v.k) + '</div><div class="v ' + v.c + '">' + fmt(v.v) +
+    '</div><div class="n">' + esc(v.n) + '</div></div>').join('');
+}
+
+function renderDrift(){
+  const host = $('#driftList');
+  host.innerHTML = DRIFT_ITEMS.map(d => {
+    const resolved = state.driftResolved[d.id];
+    const badge = d.ok ? '<span class="pill g">MATCHES EXPECTATION</span>' :
+      (resolved ? '<span class="pill b">INVESTIGATED</span>' : '<span class="pill a">DRIFT</span>');
+    return '<div class="card tight" style="margin:8px 0">' +
+      '<div class="spread"><strong class="small">' + esc(d.policy) + '</strong>' + badge + '</div>' +
+      '<div class="kv small" style="margin-top:6px">' +
+        '<dt>Expected</dt><dd>' + esc(d.expected) + '</dd>' +
+        '<dt>Observed</dt><dd>' + esc(d.observed) + '</dd>' +
+      '</div>' +
+      (d.note ? '<p class="small muted" style="margin:6px 0 0">' + esc(d.note) + '</p>' : '') +
+      ((!d.ok && !resolved) ? '<div class="row" style="margin-top:8px"><button class="btn small" data-drift="' + d.id + '" type="button">Investigate</button></div>' : '') +
+      '</div>';
+  }).join('');
+}
+
+function renderLifecycle(){
+  const host = $('#lifecycleSteps');
+  host.innerHTML = LIFECYCLE.map((s,i) =>
+    '<span class="step' + (state.lifecycleSel === i ? ' on' : '') + '" data-lc="' + i + '" role="button" tabindex="0">' + esc(s.k) + '</span>' +
+    (i < LIFECYCLE.length - 1 ? '<span class="arrow">↓</span>' : '')).join('');
+  if(state.lifecycleSel >= 0){
+    $('#lifecycleInfo').innerHTML = '<p><strong>' + esc(LIFECYCLE[state.lifecycleSel].k) + '</strong> — ' + esc(LIFECYCLE[state.lifecycleSel].t) + '</p>';
+  }
+}
+
+function renderAuto(){
+  const host = $('#autoSteps');
+  host.innerHTML = AUTO_LEVELS.map((a,i) =>
+    '<span class="step' + (state.autoLevel === i ? ' on' : '') + '" data-auto="' + i + '" role="button" tabindex="0">' + esc(a.k) + '</span>' +
+    (i < AUTO_LEVELS.length - 1 ? '<span class="arrow">→</span>' : '')).join('');
+  $('#autoInfo').innerHTML = '<p><strong>' + esc(AUTO_LEVELS[state.autoLevel].k) + '</strong> — ' + esc(AUTO_LEVELS[state.autoLevel].t) + '</p>';
+}
+
+/* =========================================================
+   CHANGE MANAGEMENT SIMULATOR
+   ========================================================= */
+const CM_STEPS = ['REQUEST','DEPENDENCY REVIEW','POLICY IMPACT ANALYSIS','TEST','APPROVAL','DEPLOY','MONITOR'];
+
+function runChange(proper){
+  const out = $('#cmOut');
+  out.innerHTML = '<div class="steps" id="cmSteps">' + CM_STEPS.map((s,i) =>
+    '<span class="step" data-c="' + i + '">' + s + '</span>' + (i < CM_STEPS.length-1 ? '<span class="arrow">↓</span>' : '')).join('') + '</div>';
+  let i = 0;
+  const seq = proper ? CM_STEPS.length : 3;
+  (function step(){
+    const els = $$('#cmSteps .step');
+    els.forEach((el, idx) => { el.classList.toggle('on', idx === i); if(idx < i) el.classList.add('done'); });
+    i++;
+    if(i < seq){ setTimeout(step, reduceMotion ? 30 : 480); }
+    else {
+      if(proper){
+        out.innerHTML += '<div class="note good"><p><strong>Change completed safely.</strong> Dependency review identified the new database, policy impact analysis produced an updated rule set, testing validated it, and monitoring confirmed behaviour after deployment.</p></div>';
+      } else {
+        out.innerHTML += '<div class="note bad"><p><strong>Impact analysis skipped.</strong> The existing policy still points at the old database. The application loses database connectivity shortly after the move — outside the change window, at the worst possible time.</p><p class="small">Lesson: policy change and infrastructure change must be the same change.</p></div>';
+        state.scenarioResolved['cm-skip'] = false;
+      }
+      pushLog('change', proper ? 'Migration with impact analysis' : 'Migration without impact analysis', proper ? 'Safe' : 'Outage');
+      save();
+    }
+  })();
+}
+
+/* =========================================================
+   INCIDENT SIMULATOR
+   ========================================================= */
+function runIncident(segmentationOn){
+  const out = $('#incOut');
+  if(segmentationOn){
+    out.innerHTML =
+      '<div class="steps" style="flex-direction:column;align-items:stretch">' +
+      '<span class="step on">TRADING APP</span><span class="arrow" style="text-align:center">↓</span>' +
+      '<span class="step" style="border-color:#5f2f2c;background:#1f1312;color:#ffb3ae">COMPROMISED</span><span class="arrow" style="text-align:center">↓</span>' +
+      '<span class="step">ATTEMPTS DATABASE ACCESS</span><span class="arrow" style="text-align:center">↓</span>' +
+      '<span class="step on">MICROSEGMENTATION POLICY</span><span class="arrow" style="text-align:center">↓</span>' +
+      '<span class="step" style="border-color:#2b5c45;background:#10201a;color:#9fe0bd">BLOCKED — RESTRICTED COMMUNICATION ✕</span>' +
+      '</div><div class="note good" style="margin-top:10px"><p>Unauthorised paths are unavailable to the compromised workload. The incident is contained to a smaller area while response proceeds.</p><p class="small">Microsegmentation can reduce potential lateral movement and blast radius. It does not guarantee that an attack will be stopped.</p></div>';
+  } else {
+    out.innerHTML =
+      '<div class="steps" style="flex-direction:column;align-items:stretch">' +
+      '<span class="step" style="border-color:#5f2f2c;background:#1f1312;color:#ffb3ae">COMPROMISED APP</span><span class="arrow" style="text-align:center">↓</span>' +
+      '<span class="step">OTHER SERVICES</span><span class="arrow" style="text-align:center">↓</span>' +
+      '<span class="step">ADDITIONAL SYSTEMS</span><span class="arrow" style="text-align:center">↓</span>' +
+      '<span class="step" style="border-color:#5f2f2c;background:#1f1312;color:#ffb3ae">POTENTIALLY LARGER BLAST RADIUS</span>' +
+      '</div><div class="note bad" style="margin-top:10px"><p>With broad internal communication permitted, the compromised workload has many reachable neighbours and containment becomes a race.</p></div>';
+  }
+  pushLog('incident', segmentationOn ? 'Incident with segmentation' : 'Incident without segmentation', segmentationOn ? 'Contained' : 'Broader exposure');
+  save();
+}
+
+/* =========================================================
+   RACI
+   ========================================================= */
+function renderRaci(){
+  let html = '<table><thead><tr><th>Activity</th>' + RACI_COLS.map(c => '<th style="text-align:center">' + c + '</th>').join('') + '</tr></thead><tbody>';
+  RACI_ROWS.forEach((r, ri) => {
+    html += '<tr><td>' + esc(r.row) + '</td>';
+    RACI_COLS.forEach(c => {
+      const v = r.v[c] || 'I';
+      html += '<td class="cell r' + v + '" data-raci="' + ri + '|' + c + '" tabindex="0" role="button" aria-label="' + esc(r.row + ' ' + c + ' ' + v) + '">' + v + '</td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  $('#raciTable').innerHTML = html;
+}
+
+function showRaci(ri, col){
+  const r = RACI_ROWS[ri];
+  const v = r.v[col];
+  const meaning = {A:'Accountable — the single owner who answers for the outcome.',
+    R:'Responsible — does the work.',
+    C:'Consulted — provides input before the decision.',
+    I:'Informed — kept aware after the decision.'}[v];
+  $('#raciInfo').innerHTML = '<p><strong>' + esc(r.row) + ' · ' + esc(col) + ' · ' + v + '</strong></p>' +
+    '<p class="small">' + esc(meaning) + '</p><p class="small muted">' + esc(r.why) + '</p>';
+  state.raciSeen[ri + '-' + col] = true;
+  save();
+}
+
+/* =========================================================
+   SCALE
+   ========================================================= */
+function renderScale(){
+  const s = state.scale;
+  const relationships = Math.round(s.app * (1 + s.wl / 4000));
+  const policyObjects = Math.round(s.pol * (1 + s.cov / 200));
+  let complexity = 'Moderate';
+  const score = (s.wl / 100000) * 40 + (s.app / 2000) * 25 + (s.team / 300) * 15 + (s.cov / 100) * 20;
+  if(score > 70) complexity = 'Very high';
+  else if(score > 45) complexity = 'High';
+  else if(score > 22) complexity = 'Moderate';
+  else complexity = 'Low';
+
+  const automationNeed = clamp(Math.round((s.wl / 100000) * 60 + (s.pol / 200000) * 40), 0, 100);
+
+  $('#scaleOut').innerHTML =
+    '<div class="metric"><div class="k">Estimated policy relationships</div><div class="v purple">' + fmt(relationships) + '</div><div class="n">Application dependencies to model</div></div>' +
+    '<div class="metric"><div class="k">Policy objects to manage</div><div class="v blue">' + fmt(policyObjects) + '</div><div class="n">Grows with enforcement coverage</div></div>' +
+    '<div class="metric"><div class="k">Programme complexity</div><div class="v ' + (complexity === 'Very high' || complexity === 'High' ? 'amber' : 'green') + '">' + complexity + '</div><div class="n">Educational estimate</div></div>' +
+    '<div class="metric"><div class="k">Automation requirement</div><div class="v ' + (automationNeed > 60 ? 'amber' : 'green') + '">' + automationNeed + '%</div><div class="n">Manual processes stop scaling here</div></div>' +
+    '<div class="metric"><div class="k">Human review capacity</div><div class="v">' + fmt(Math.max(1, Math.round(s.team * 12))) + '</div><div class="n">Policy reviews per week (estimate)</div></div>' +
+    '<div class="metric"><div class="k">Coordination load</div><div class="v ' + (s.team > 80 ? 'amber' : 'green') + '">' + (s.team > 80 ? 'High' : 'Manageable') + '</div><div class="n">' + fmt(s.team) + ' participating teams</div></div>';
+
+  const unassigned = WORKLOADS.length - Object.keys(state.zone).length;
+  $('#scaleOut').innerHTML += '<div class="metric"><div class="k">Unzoned workloads in this model</div><div class="v ' + (unassigned > 5 ? 'amber' : 'green') + '">' + unassigned + '</div><div class="n">Assign zones in phase 05</div></div>';
+}
+
+/* =========================================================
+   ADVERSARIAL
+   ========================================================= */
+function renderAdversarial(){
+  $('#advGrid').innerHTML = ADVERSARIAL.map((a,i) =>
+    '<button class="btn" data-adv="' + i + '" type="button" style="text-align:left">' + esc(a.k) + '</button>').join('');
+}
+
+function showAdversarial(i){
+  const a = ADVERSARIAL[i];
+  state.adversarial[i] = true;
+  $('#advOut').innerHTML = '<div class="card tight"><h4 style="margin-top:0">Red team result: ' + esc(a.k) + '</h4>' +
+    '<div class="note bad"><p><strong>Failure mode:</strong> ' + esc(a.r) + '</p></div></div>';
+  save();
+}
+
+/* =========================================================
+   BUILD YOUR OWN PROGRAM
+   ========================================================= */
+function bindRange(id, key, obj, label){
+  const el = $('#' + id);
+  const lab = $('#' + id + 'V');
+  if(!el) return;
+  el.value = obj[key];
+  if(lab) lab.textContent = obj[key];
+  el.addEventListener('input', () => {
+    obj[key] = parseInt(el.value, 10);
+    if(lab) lab.textContent = el.value;
+    save();
+  });
+}
+
+function generateProgram(){
+  const b = state.builder;
+  const size = parseInt(b.size, 10);
+  const cx = b.cx, leg = b.leg, cloud = b.cloud, reg = b.reg, auto = b.auto, mat = b.mat, own = b.owner;
+  const wl = b.wl;
+
+  const pilotSize = clamp(Math.round(8 + (100 - leg) / 12 + (100 - cx) / 20), 8, 30);
+  const phaseCount = clamp(Math.round(6 + (wl / 25000) + (cx / 40) + (leg / 50)), 6, 11);
+  const policyComplexity = clamp(Math.round((cx * 0.5 + leg * 0.3 + cloud * 0.2)), 0, 100);
+  const automationReq = clamp(Math.round((wl / 100000) * 50 + (cx / 100) * 25 + (cloud / 100) * 15), 5, 100);
+  const govReq = clamp(Math.round(reg * 0.7 + (size * 7)), 0, 100);
+
+  const risks = [];
+  if(leg > 60) risks.push('High legacy dependency — expect undocumented flows and unusual protocols.');
+  if(cx > 65) risks.push('High application complexity — policy volume and review effort will be substantial.');
+  if(own < 50) risks.push('Low application-owner participation — dependency questions will go unanswered and stall the programme.');
+  if(auto > 70 && mat < 50) risks.push('Automation ahead of maturity — automating an unvalidated environment scales mistakes.');
+  if(reg > 70) risks.push('High regulatory pressure — evidence, audit trails and change records become mandatory deliverables.');
+  if(cloud > 60) risks.push('Significant cloud adoption — enforcement models differ between platforms; policy translation must be validated.');
+  if(!risks.length) risks.push('No dominant risk identified in this configuration — maintain discovery and drift monitoring anyway.');
+
+  const teams = ['Security Architecture'];
+  if(cx > 40) teams.push('Application Teams');
+  if(leg > 40) teams.push('Network Security');
+  if(cloud > 40) teams.push('Cloud Engineering');
+  if(wl > 3000) teams.push('SRE / Operations');
+  if(reg > 50) teams.push('Risk / Compliance');
+  teams.push('Endpoint / Server Engineering');
+
+  const phases = [];
+  phases.push('Phase 0 — Business alignment, success metrics and sponsorship.');
+  phases.push('Phase 1 — Discovery across ' + fmt(wl) + ' workloads; track unknowns explicitly.');
+  phases.push('Phase 2 — Dependency mapping prioritised on critical applications.');
+  phases.push('Phase 3 — Classification and ownership assignment.');
+  phases.push('Phase 4 — Policy design with mandatory justification and owner.');
+  phases.push('Phase 5 — Observe mode across at least one full business cycle.');
+  phases.push('Phase 6 — Pilot with approximately ' + pilotSize + ' workloads.');
+  phases.push('Phase 7 — Controlled enforcement, wave by wave, with rollback proven.');
+  if(automationReq > 45) phases.push('Phase 8 — Automation: policy validation and deployment pipelines.');
+  phases.push('Phase 9 — Continuous operations: drift review, exception governance, audit.');
+  if(wl > 20000) phases.push('Phase 10 — Enterprise expansion with federated ownership.');
+
+  const coverageTarget = clamp(Math.round(100 - leg / 3 - cx / 5 + mat / 4), 35, 92);
+
+  $('#bOut').innerHTML =
+    '<div class="grid g3">' +
+      '<div class="metric"><div class="k">Suggested pilot scope</div><div class="v blue">' + pilotSize + '</div><div class="n">Workloads in the first enforced wave</div></div>' +
+      '<div class="metric"><div class="k">Suggested phases</div><div class="v purple">' + phaseCount + '</div><div class="n">Incremental waves</div></div>' +
+      '<div class="metric"><div class="k">Policy complexity</div><div class="v ' + (policyComplexity > 65 ? 'amber' : 'green') + '">' + policyComplexity + '%</div><div class="n">Relative measure</div></div>' +
+      '<div class="metric"><div class="k">Automation requirement</div><div class="v ' + (automationReq > 60 ? 'amber' : 'green') + '">' + automationReq + '%</div><div class="n">Manual effort will not scale</div></div>' +
+      '<div class="metric"><div class="k">Governance requirement</div><div class="v ' + (govReq > 65 ? 'amber' : 'green') + '">' + govReq + '%</div><div class="n">Evidence and approval depth</div></div>' +
+      '<div class="metric"><div class="k">Realistic first-year coverage</div><div class="v blue">' + coverageTarget + '%</div><div class="n">Educational estimate</div></div>' +
+    '</div>' +
+    '<h4>Suggested phasing</h4><ul class="small" style="padding-left:18px">' + phases.map(p => '<li>' + esc(p) + '</li>').join('') + '</ul>' +
+    '<h4>Required teams</h4><p class="small">' + teams.map(t => '<span class="tag" style="margin:2px 4px 2px 0">' + esc(t) + '</span>').join('') + '</p>' +
+    '<h4>Main risks</h4><ul class="small" style="padding-left:18px">' + risks.map(r => '<li>' + esc(r) + '</li>').join('') + '</ul>' +
+    '<h4>Operational requirements</h4>' +
+    '<ul class="small" style="padding-left:18px">' +
+      '<li>Rollback procedure tested before enforcement' + (reg > 60 ? ' — and evidenced for audit' : '') + '.</li>' +
+      '<li>Monitoring coverage validated before and after each wave.</li>' +
+      '<li>Exception register with expiry dates and named owners.</li>' +
+      '<li>Drift review on a defined cadence' + (govReq > 60 ? ', with documented outcomes' : '') + '.</li>' +
+    '</ul>';
+
+  pushLog('simulation', 'Generated program recommendation', phaseCount + ' phases, pilot ' + pilotSize);
+  save();
+}
+
+/* =========================================================
+   DASHBOARDS
+   ========================================================= */
+function dashMetrics(){
+  const z = Object.keys(state.zone).length;
+  const c = Object.keys(state.criticality).length;
+  const r = Object.keys(state.role).length;
+  const coverage = clamp(Math.round((z / WORKLOADS.length) * 72 + (c / WORKLOADS.length) * 10 + (r / WORKLOADS.length) * 6), 0, 100);
+  const enfBase = {observe:18, simulate:34, enforce:52}[state.enforcement] || 18;
+  const enforcement = clamp(enfBase + Math.min(18, state.policies.length), 0, 100);
+  const unresolvedDrift = DRIFT_ITEMS.filter(d => !d.ok && !state.driftResolved[d.id]).length;
+  const unknown = clamp(6 + unresolvedDrift * 2 - (state.discovery.run ? 2 : 0), 1, 30);
+  const exceptions = state.exceptions.filter(e => e.status !== 'removed').length + 10;
+  const drift = unresolvedDrift + 5;
+  const critProtected = clamp(Math.round(70 + (z / WORKLOADS.length) * 25), 40, 99);
+  return {coverage, enforcement, unknown, exceptions, drift, critProtected, z, c, r, unresolvedDrift};
+}
+
+function renderDash(){
+  const m = dashMetrics();
+  $('#exCoverage').textContent = m.coverage + '%';
+  $('#exEnforce').textContent = m.enforcement + '%';
+  $('#exUnknown').textContent = m.unknown + '%';
+  $('#exExc').textContent = m.exceptions;
+  $('#exDrift').textContent = m.drift;
+  $('#exCrit').textContent = m.critProtected + '%';
+
+  let meaning = 'Coverage describes how much of the estate is understood and under a segmentation model. ';
+  if(m.coverage < 40) meaning += 'At this level, enforcement would be risky because a large part of the estate is still unclassified. Continue discovery and classification. ';
+  else if(m.coverage < 70) meaning += 'The programme is maturing but significant parts of the estate remain outside the model. Enforcement should stay limited to validated applications. ';
+  else meaning += 'A majority of the estate is understood, which makes controlled enforcement realistic. ';
+
+  if(m.unknown > 10) meaning += 'Unknown traffic is high — unexplained communication is the main source of surprises during enforcement. ';
+  else meaning += 'Unknown traffic is within a range where it can be investigated systematically. ';
+
+  if(m.drift > 8) meaning += 'Policy drift is accumulating and needs scheduled review, otherwise policies slowly stop matching reality.';
+  else meaning += 'Policy drift is being managed.';
+
+  $('#exMeaning').textContent = meaning;
+
+  const flows = computeFlows();
+  const eng = [
+    {k:'Workload inventory', v:WORKLOADS.length, n:'In this model', c:'blue'},
+    {k:'Flow relationships', v:flows.details.length, n:'Observed edges', c:''},
+    {k:'Policy objects', v:state.policies.length, n:'In the live policy table', c:'purple'},
+    {k:'Enforcement points', v:6, n:'Network, endpoint, cloud, container', c:''},
+    {k:'Policy violations', v:flows.blocked, n:'Denied flows (enforce mode)', c:'red'},
+    {k:'Unknown flows', v:flows.unknown, n:'Require investigation', c:'amber'},
+    {k:'Exceptions', v:state.exceptions.length, n:'Register entries', c:'amber'},
+    {k:'Drift items', v:DRIFT_ITEMS.filter(d => !d.ok && !state.driftResolved[d.id]).length, n:'Unresolved', c:'red'},
+    {k:'Deployment status', v:state.enforcement.toUpperCase(), n:'Current mode', c:'green'}
+  ];
+  $('#engMetrics').innerHTML = eng.map(e =>
+    '<div class="metric"><div class="k">' + esc(e.k) + '</div><div class="v ' + e.c + '">' +
+    (typeof e.v === 'number' ? fmt(e.v) : esc(e.v)) + '</div><div class="n">' + esc(e.n) + '</div></div>').join('');
+
+  const hist = state.log.length ? state.log : [{t:'—', actor:'system', change:'Lab initialised', result:'Ready'}];
+  $('#engHistory').innerHTML = hist.map(h =>
+    '<tr><td class="small">' + esc(h.t) + '</td><td class="small">' + esc(h.actor) + '</td><td class="small">' + esc(h.change) +
+    '</td><td class="small muted">' + esc(h.result) + '</td></tr>').join('');
+}
+
+/* =========================================================
+   ROADMAP
+   ========================================================= */
+function renderRoadmap(){
+  $('#roadmap').innerHTML = ROADMAP.map((p,i) =>
+    '<details' + (i === 0 ? ' open' : '') + '><summary><span>' + esc(p.n) + ' · ' + esc(p.t) + '</span></summary>' +
+    '<div class="details-body">' +
+      '<dl class="kv">' +
+        '<dt>Objective</dt><dd>' + esc(p.obj) + '</dd>' +
+        '<dt>Inputs</dt><dd>' + p.inp.map(esc).join(' · ') + '</dd>' +
+        '<dt>Activities</dt><dd>' + p.act.map(esc).join(' · ') + '</dd>' +
+        '<dt>Outputs</dt><dd>' + p.out.map(esc).join(' · ') + '</dd>' +
+        '<dt>People</dt><dd>' + p.ppl.map(esc).join(' · ') + '</dd>' +
+        '<dt>Risks</dt><dd>' + p.risk.map(esc).join(' · ') + '</dd>' +
+        '<dt>Exit criteria</dt><dd>' + esc(p.exit) + '</dd>' +
+      '</dl>' +
+    '</div></details>').join('');
+}
+
+function renderPrinciples(){
+  $('#principles').innerHTML = PRINCIPLES.map(p =>
+    '<div class="metric"><div class="k">Principle ' + esc(p[0]) + '</div><div class="n" style="font-size:13.5px;color:#c8d2e0">' + esc(p[1]) + '</div></div>').join('');
+}
+
+function renderIdeal(){
+  $('#idealSteps').innerHTML = IDEAL_STEPS.map((s,i) =>
+    '<span class="step">' + esc(s) + '</span>' + (i < IDEAL_STEPS.length - 1 ? '<span class="arrow" style="text-align:center">↓</span>' : '')).join('');
+}
+
+/* =========================================================
+   RESET
+   ========================================================= */
+function resetLab(){
+  const ok = window.confirm('Reset the lab? This clears local progress, deletes simulated policies, and resets all simulator settings. This cannot be undone.');
+  if(!ok) return;
+  try {
+    localStorage.removeItem(LS_KEY);
+    localStorage.removeItem(WELCOME_KEY);
+  } catch(e){}
+  state = defaultState();
+  state.policies = SEED_POLICIES.map(p => Object.assign({}, p));
+  save();
+  applyAll();
+  goPhase('why');
+  showWelcome();
+  toast('Lab reset to its initial state.');
+}
+
+/* =========================================================
+   APPLY / INIT
+   ========================================================= */
+function applyAll(){
+  setMode(state.mode);
+  renderInventory();
+  renderMap();
+  if(boards.crit) boards.crit.render();
+  if(boards.role) boards.role.render();
+  if(boards.zone) boards.zone.render();
+  renderPolicies();
+  renderEnforcement();
+  renderScenarioButtons();
+  renderExceptions();
+  renderOps();
+  renderDrift();
+  renderLifecycle();
+  renderAuto();
+  renderScale();
+  renderAdversarial();
+  renderRaci();
+  renderDash();
+  updateProgress();
+  $('#surpriseCard').hidden = !state.surprise;
+  const lb = document.getElementById('node-legacy-batch');
+  if(lb) lb.classList.toggle('hidden', !state.surprise);
+  $$('input[name="enf"]').forEach(r => { r.checked = (r.value === state.enforcement); });
+  requestAnimationFrame(drawMap);
+}
+
+function bindEvents(){
+  /* mode */
+  $('#modeSimple').addEventListener('click', () => setMode('simple'));
+  $('#modePro').addEventListener('click', () => setMode('pro'));
+
+  /* navigation (delegated) */
+  document.addEventListener('click', (e) => {
+    const g = e.target.closest('[data-goto]');
+    if(g){ goPhase(g.dataset.goto); return; }
+
+    const c = e.target.closest('[data-complete]');
+    if(c){
+      state.done[c.dataset.complete] = true;
+      updateProgress(); save();
+      toast('Phase marked complete.');
+      return;
+    }
+
+    const del = e.target.closest('[data-delpol]');
+    if(del){
+      state.policies = state.policies.filter(p => p.id !== del.dataset.delpol);
+      renderPolicies(); renderEnforcement(); renderOps(); renderDash(); save();
+      return;
+    }
+
+    const node = e.target.closest('[data-node]');
+    if(node){ showNode(node.dataset.node); return; }
+
+    const inv = e.target.closest('[data-wlinfo]');
+    if(inv){
+      const w = WL_BY_ID[inv.dataset.wlinfo];
+      if(w){ goPhase('map'); setTimeout(() => showNode(w.id), 220); }
+      return;
+    }
+
+    const invf = e.target.closest('[data-invfilter]');
+    if(invf){ state.invFilter = invf.dataset.invfilter; renderInventory(); save(); return; }
+
+    const scn = e.target.closest('[data-scn]');
+    if(scn){ showScenario(scn.dataset.scn); return; }
+
+    const scno = e.target.closest('[data-scnopt]');
+    if(scno){
+      const parts = scno.dataset.scnopt.split('|');
+      answerScenario(parts[0], parseInt(parts[1], 10));
+      return;
+    }
+
+    const exa = e.target.closest('[data-exadv]');
+    if(exa){ exceptionAdvance(exa.dataset.exadv); return; }
+    const exr = e.target.closest('[data-exrm]');
+    if(exr){ exceptionRemove(exr.dataset.exrm); return; }
+    const exn = e.target.closest('[data-exrenew]');
+    if(exn){ exceptionRenew(exn.dataset.exrenew); return; }
+
+    const dr = e.target.closest('[data-drift]');
+    if(dr){
+      state.driftResolved[dr.dataset.drift] = true;
+      renderDrift(); renderOps(); renderDash(); save();
+      toast('Drift item investigated and logged.');
+      return;
+    }
+
+    const lc = e.target.closest('[data-lc]');
+    if(lc){ state.lifecycleSel = parseInt(lc.dataset.lc, 10); renderLifecycle(); save(); return; }
+
+    const au = e.target.closest('[data-auto]');
+    if(au){ state.autoLevel = parseInt(au.dataset.auto, 10); renderAuto(); save(); return; }
+
+    const adv = e.target.closest('[data-adv]');
+    if(adv){ showAdversarial(parseInt(adv.dataset.adv, 10)); return; }
+
+    const rc = e.target.closest('[data-raci]');
+    if(rc){
+      const p = rc.dataset.raci.split('|');
+      showRaci(parseInt(p[0], 10), p[1]);
+      return;
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if(e.key !== 'Enter' && e.key !== ' ') return;
+    const rc = e.target.closest('[data-raci]');
+    if(rc){ e.preventDefault(); const p = rc.dataset.raci.split('|'); showRaci(parseInt(p[0],10), p[1]); return; }
+    const lc = e.target.closest('[data-lc]');
+    if(lc){ e.preventDefault(); state.lifecycleSel = parseInt(lc.dataset.lc,10); renderLifecycle(); return; }
+    const au = e.target.closest('[data-auto]');
+    if(au){ e.preventDefault(); state.autoLevel = parseInt(au.dataset.auto,10); renderAuto(); return; }
+  });
+
+  /* why chapter */
+  $('#whyCompromise').addEventListener('click', whyCompromise);
+  $('#whySegment').addEventListener('click', whySegment);
+  $('#whyReset').addEventListener('click', whyReset);
+
+  /* discovery */
+  $('#runDiscovery').addEventListener('click', runDiscovery);
+
+  /* map */
+  $('#mapSurprise').addEventListener('click', revealSurprise);
+  $('#mapShowAll').addEventListener('click', () => {
+    $$('.node').forEach(n => n.classList.remove('hidden'));
+    const lb = document.getElementById('node-legacy-batch');
+    if(lb && !state.surprise) lb.classList.add('hidden');
+    requestAnimationFrame(drawMap);
+  });
+  $('#mapAppsOnly').addEventListener('click', () => {
+    $$('.node').forEach(n => {
+      const w = WL_BY_ID[n.dataset.node];
+      const keep = w && (w.layer === 'app' || w.layer === 'endpoint');
+      n.classList.toggle('hidden', !keep);
+    });
+    const lb = document.getElementById('node-legacy-batch');
+    if(lb) lb.classList.toggle('hidden', !state.surprise);
+    requestAnimationFrame(drawMap);
+  });
+
+  /* policy builder */
+  $('#pbAdd').addEventListener('click', addPolicy);
+  $('#pbSeed').addEventListener('click', () => {
+    state.policies = SEED_POLICIES.map(p => Object.assign({}, p));
+    renderPolicies(); renderEnforcement(); renderOps(); renderDash(); save();
+    toast('Example policies restored.');
+  });
+  $('#pbClear').addEventListener('click', () => {
+    state.policies = [];
+    renderPolicies(); renderEnforcement(); renderOps(); renderDash(); save();
+    toast('All policies cleared.');
+  });
+
+  /* pilot */
+  $('#shadowRun').addEventListener('click', runShadow);
+  $('#startPilot').addEventListener('click', startPilot);
+
+  /* enforcement */
+  $$('input[name="enf"]').forEach(r => r.addEventListener('change', () => setEnforcement(r.value)));
+  $('#rollbackBtn').addEventListener('click', emergencyRollback);
+
+  /* exceptions */
+  $('#exSubmit').addEventListener('click', exceptionSubmit);
+
+  /* ops */
+  $('#opsRefresh').addEventListener('click', () => {
+    renderOps();
+    toast('Telemetry refreshed (simulated).');
+  });
+  $('#cmProper').addEventListener('click', () => runChange(true));
+  $('#cmSkip').addEventListener('click', () => runChange(false));
+  $('#incRun').addEventListener('click', () => runIncident(true));
+  $('#incOff').addEventListener('click', () => runIncident(false));
+
+  /* scale */
+  ['scWl','scApp','scTeam','scPol','scCov'].forEach(id => {
+    const el = $('#' + id);
+    const lab = $('#' + id + 'V');
+    if(!el) return;
+    el.addEventListener('input', () => {
+      const v = parseInt(el.value, 10);
+      if(lab) lab.textContent = v;
+      const map = {scWl:'wl', scApp:'app', scTeam:'team', scPol:'pol', scCov:'cov'};
+      state.scale[map[id]] = v;
+      renderScale(); save();
+    });
+  });
+
+  /* builder */
+  $('#bSize').addEventListener('change', (e) => { state.builder.size = e.target.value; save(); });
+  ['bWl','bCx','bLeg','bCloud','bReg','bAuto','bMat','bOwner'].forEach(id => {
+    const key = {bWl:'wl', bCx:'cx', bLeg:'leg', bCloud:'cloud', bReg:'reg', bAuto:'auto', bMat:'mat', bOwner:'owner'}[id];
+    bindRange(id, key, state.builder);
+  });
+  $('#bGenerate').addEventListener('click', generateProgram);
+
+  /* copy policy-as-code */
+  $('#copyPac').addEventListener('click', () => {
+    const txt = 'application: trading\ndestination: trading-db\nservice: database\naction: allow\nreason: required dependency\nowner: trading-platform\nexpires: never';
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(() => toast('Example copied.'), () => toast('Copy unavailable in this browser.'));
+    } else {
+      toast('Copy unavailable in this browser.');
+    }
+  });
+
+  /* dashboards */
+  $('#viewExec').addEventListener('click', () => {
+    state.dash = 'exec'; $('#dashExec').hidden = false; $('#dashEng').hidden = true;
+    $('#viewExec').classList.add('on'); $('#viewEng').classList.remove('on');
+    $('#viewExec').setAttribute('aria-pressed','true'); $('#viewEng').setAttribute('aria-pressed','false');
+    save();
+  });
+  $('#viewEng').addEventListener('click', () => {
+    state.dash = 'eng'; $('#dashExec').hidden = true; $('#dashEng').hidden = false;
+    $('#viewEng').classList.add('on'); $('#viewExec').classList.remove('on');
+    $('#viewEng').setAttribute('aria-pressed','true'); $('#viewExec').setAttribute('aria-pressed','false');
+    renderDash(); save();
+  });
+
+  /* reset */
+  $('#resetBtn').addEventListener('click', resetLab);
+  $('#resetBtn2').addEventListener('click', resetLab);
+
+  /* resize */
+  let rt = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(rt);
+    rt = setTimeout(drawMap, 140);
+  });
+}
+
+/* ---------- shadow policy ---------- */
+function runShadow(){
+  const f = computeFlows();
+  const total = 10234;
+  const blockedPct = f.details.length ? (f.blocked + f.unknown) / f.details.length : 0;
+  const wouldBlock = Math.round(total * blockedPct);
+  const investigate = Math.round(wouldBlock * 0.14);
+  const remain = total - wouldBlock;
+
+  const out = $('#shadowOut');
+  out.innerHTML = '<div class="steps"><span class="step on">CALCULATING…</span></div>';
+  setTimeout(() => {
+    out.innerHTML =
+      '<div class="grid g4">' +
+        '<div class="metric"><div class="k">Connections observed</div><div class="v blue">' + fmt(total) + '</div><div class="n">Simulated daily flows</div></div>' +
+        '<div class="metric"><div class="k">Would remain allowed</div><div class="v green">' + fmt(remain) + '</div><div class="n">Match current policy</div></div>' +
+        '<div class="metric"><div class="k">Would be blocked</div><div class="v red">' + fmt(wouldBlock) + '</div><div class="n">Predicted impact</div></div>' +
+        '<div class="metric"><div class="k">Require investigation</div><div class="v amber">' + fmt(investigate) + '</div><div class="n">Unexplained or unexpected</div></div>' +
+      '</div>' +
+      '<div class="note warn" style="margin-top:10px"><p><strong>SIMULATION</strong> — nothing has been blocked. This is the prediction you use to decide whether enforcement is safe to enable.</p></div>';
+    state.done.pilot = state.done.pilot;
+    save();
+  }, reduceMotion ? 60 : 700);
+}
+
+/* ---------- pilot simulator ---------- */
+const PILOT_EVENTS = [
+  {at:2, title:'Unexpected dependency', text:'During modelling, the trading application shows traffic to a legacy batch service that nobody documented.',
+   opts:[
+     {l:'Pause the pilot and investigate the flow', fb:'Correct. Investigate before enforcing. This is exactly the flow that would have caused a silent outage.'},
+     {l:'Allow it broadly and continue', fb:'Broad allows defer the problem and create permanent unowned access.'}
+   ]},
+  {at:4, title:'Missing monitoring path', text:'Enforcement blocks a monitoring collector that the backup system relied on.',
+   opts:[
+     {l:'Restore the monitoring path with a specific policy, then re-enforce', fb:'Correct. Visibility is part of the control — restore it before continuing.'},
+     {l:'Proceed; monitoring can be fixed later', fb:'Without telemetry the next failure will be invisible until a user reports it.'}
+   ]},
+  {at:5, title:'Temporary business exception', text:'A business unit requests temporary access to complete a month-end process.',
+   opts:[
+     {l:'Grant a time-limited exception with review and expiry', fb:'Correct. Governed, scoped and time-bound. This is what exceptions are for.'},
+     {l:'Add a permanent allow rule', fb:'A permanent rule for a temporary need becomes architecture nobody remembers approving.'}
+   ]}
+];
+
+let pilotTimer = null;
+
+function pilotRender(stepIdx){
+  const steps = $$('#pilotSteps .step');
+  steps.forEach((s, i) => {
+    s.classList.toggle('on', i === stepIdx);
+    s.classList.toggle('done', i < stepIdx);
+  });
+}
+
+function startPilot(){
+  clearTimeout(pilotTimer);
+  const out = $('#pilotOut');
+  out.innerHTML = '<p class="small muted">Pilot starting…</p>';
+  let i = 0;
+  let evIdx = 0;
+
+  function advance(){
+    if(i > 5){
+      pilotRender(5);
+      out.innerHTML += '<div class="note good"><p><strong>Pilot complete.</strong> Policies were tested, rollback was exercised, monitoring worked, and the operational teams understand how incidents will appear.</p><p class="small">Progression to a wider wave should be approved by the business owner.</p></div>';
+      state.done.pilot = true;
+      updateProgress();
+      save();
+      return;
+    }
+    pilotRender(i);
+    const ev = PILOT_EVENTS[evIdx];
+    if(ev && ev.at === i){
+      evIdx++;
+      out.innerHTML = '<div class="card tight"><h4 style="margin-top:0">⚠ ' + esc(ev.title) + '</h4><p class="small">' + esc(ev.text) + '</p>' +
+        '<div class="row">' + ev.opts.map((o,k) => '<button class="btn small" data-pilotopt="' + evIdx + '|' + k + '" type="button">' + esc(o.l) + '</button>').join('') + '</div>' +
+        '<div id="pilotFb"></div></div>' + out.innerHTML;
+      return;
+    }
+    out.innerHTML = '<p class="small"><span class="pill b">' + (i+1) + '/6</span> Pilot stage running…</p>' + out.innerHTML;
+    i++;
+    pilotTimer = setTimeout(advance, reduceMotion ? 40 : 700);
+  }
+  advance();
+}
+
+function answerPilot(evIdx, optIdx){
+  const ev = PILOT_EVENTS[evIdx - 1];
+  const o = ev.opts[optIdx];
+  const fb = $('#pilotFb');
+  if(fb) fb.innerHTML = '<div class="note ' + (optIdx === 0 ? 'good' : 'warn') + '" style="margin-top:8px"><p class="small">' + esc(o.fb) + '</p></div>';
+  pushLog('pilot', ev.title, optIdx === 0 ? 'Good response' : 'Risky response');
+  save();
+  const on = $$('#pilotSteps .step').findIndex(s => s.classList.contains('on'));
+  const next = on + 1;
+  clearTimeout(pilotTimer);
+  pilotTimer = setTimeout(() => {
+    continuePilot(next, evIdx);
+  }, reduceMotion ? 60 : 900);
+}
+
+function continuePilot(i, evIdx){
+  const out = $('#pilotOut');
+  function advance(){
+    if(i > 5){
+      pilotRender(5);
+      out.innerHTML = '<div class="note good"><p><strong>Pilot complete.</strong> Policies were tested, rollback was exercised, monitoring worked, and the operational teams understand how incidents will appear.</p><p class="small">Progression to a wider wave should be approved by the business owner.</p></div>' + out.innerHTML;
+      state.done.pilot = true;
+      updateProgress();
+      save();
+      return;
+    }
+    pilotRender(i);
+    const ev = PILOT_EVENTS[evIdx];
+    if(ev && ev.at === i){
+      evIdx++;
+      out.innerHTML = '<div class="card tight"><h4 style="margin-top:0">⚠ ' + esc(ev.title) + '</h4><p class="small">' + esc(ev.text) + '</p>' +
+        '<div class="row">' + ev.opts.map((o,k) => '<button class="btn small" data-pilotopt="' + evIdx + '|' + k + '" type="button">' + esc(o.l) + '</button>').join('') + '</div>' +
+        '<div id="pilotFb"></div></div>' + out.innerHTML;
+      return;
+    }
+    out.innerHTML = '<p class="small"><span class="pill b">' + (i+1) + '/6</span> Pilot stage running…</p>' + out.innerHTML;
+    i++;
+    pilotTimer = setTimeout(advance, reduceMotion ? 40 : 700);
+  }
+  advance();
+}
+
+/* delegated handler for pilot options */
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-pilotopt]');
+  if(!b) return;
+  const p = b.dataset.pilotopt.split('|');
+  answerPilot(parseInt(p[0],10), parseInt(p[1],10));
+});
+
+/* =========================================================
+   INIT
+   ========================================================= */
+function init(){
+  load();
+  buildChips();
+  fillPolicySelects();
+  bindEvents();
+
+  boards.crit = boardMount($('#boardCrit'), {
+    key:'criticality',
+    columns: CRITS,
+    after: () => { renderDash(); renderMap(); renderScale(); }
+  });
+  boards.role = boardMount($('#boardRole'), {
+    key:'role',
+    columns: ROLES,
+    after: () => { renderDash(); }
+  });
+  boards.zone = boardMount($('#boardZone'), {
+    key:'zone',
+    columns: ZONES,
+    after: () => { renderDash(); renderScale(); }
+  });
+
+  renderRoadmap();
+  renderPrinciples();
+  renderIdeal();
+
+  applyAll();
+
+  /* restore scale sliders */
+  $('#scWl').value = state.scale.wl; $('#scWlV').textContent = state.scale.wl;
+  $('#scApp').value = state.scale.app; $('#scAppV').textContent = state.scale.app;
+  $('#scTeam').value = state.scale.team; $('#scTeamV').textContent = state.scale.team;
+  $('#scPol').value = state.scale.pol; $('#scPolV').textContent = state.scale.pol;
+  $('#scCov').value = state.scale.cov; $('#scCovV').textContent = state.scale.cov;
+
+  /* restore builder */
+  $('#bSize').value = state.builder.size;
+
+  /* restore dashboard view */
+  if(state.dash === 'eng'){
+    $('#dashExec').hidden = true; $('#dashEng').hidden = false;
+    $('#viewEng').classList.add('on'); $('#viewExec').classList.remove('on');
+  }
+
+  /* restore phase */
+  goPhase(state.phase || 'why');
+
+  /* ensure legacy node visibility matches state */
+  const lb = document.getElementById('node-legacy-batch');
+  if(lb) lb.classList.toggle('hidden', !state.surprise);
+  $('#surpriseCard').hidden = !state.surprise;
+
+  /* initial map draw after layout settles */
+  setTimeout(drawMap, 200);
+  setTimeout(drawMap, 800);
+
+  /* first-launch welcome screen */
+  initWelcome();
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+})();
+</script>
+</body>
+</html>
